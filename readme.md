@@ -17,17 +17,17 @@ Major and Minor version numbers always dictate the dotnet version being used.
 
 ### dotnet 5.0 generator installation
 ```bash
-dotnet tool install dotnet-openapi-generator -g --version 5.0.0-preview.6
+dotnet tool install dotnet-openapi-generator -g --version 5.0.0-preview.7
 ```
 
 ### dotnet 6.0 generator installation
 ```bash
-dotnet tool install dotnet-openapi-generator -g --version 6.0.0-preview.6
+dotnet tool install dotnet-openapi-generator -g --version 6.0.0-preview.7
 ```
 
 ### dotnet 7.0 generator installation
 ```bash
-dotnet tool install dotnet-openapi-generator -g --version 7.0.0-preview.6
+dotnet tool install dotnet-openapi-generator -g --version 7.0.0-preview.7
 ```
 
 
@@ -35,7 +35,7 @@ dotnet tool install dotnet-openapi-generator -g --version 7.0.0-preview.6
 
 ```bash
 C:\Git > dotnet openapi-generator --help
-dotnet-openapi-generator 7.0.0-preview.6
+openapi-generator 7.0.0-preview.7
 Steven Thuriot
 
   -n, --namespace                 (Default: Project name) The namespace used for the generated files
