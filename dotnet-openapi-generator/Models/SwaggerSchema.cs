@@ -15,6 +15,8 @@ internal class SwaggerSchema
     public SwaggerAllOfs? allOf { get; set; }
     public SwaggerSchemaDiscriminator? discriminator { get; set; }
 
+    public IEnumerable<(string Key, SwaggerSchemaProperty Value)>? IterateProperties() => properties?.Iterate(discriminator?.propertyName);
+
     private string GetDefinitionType(string name, IEnumerable<SwaggerSchema> schemas)
     {
         if (@enum is not null)
@@ -104,14 +106,7 @@ internal class SwaggerSchema
 ";
     }
 
-    private HashSet<(string key, SwaggerSchemaProperty value)> GetRequiredProperties()
-    {
-        return properties?
-            .Where(x => x.Key != discriminator?.propertyName)
-            .Where(x => x.Value.required.GetValueOrDefault() || !x.Value.nullable)
-            .Select(x => (x.Key, x.Value))
-            .ToHashSet() ?? new(0);
-    }
+    private HashSet<(string key, SwaggerSchemaProperty value)> GetRequiredProperties() => IterateProperties()?.Where(x => x.Value.required.GetValueOrDefault() || !x.Value.nullable).ToHashSet() ?? new(0);
 
     private string GetInheritance()
     {
@@ -143,7 +138,7 @@ internal class SwaggerSchema
 
     public string? GetBody(bool supportRequiredProperties, IReadOnlyDictionary<string, SwaggerSchema> schemas)
     {
-        return @enum?.GetBody(FlaggedEnum, EnumNames) ?? properties?.GetBody(allOf, supportRequiredProperties, schemas);
+        return @enum?.GetBody(FlaggedEnum, EnumNames) ?? properties?.GetBody(allOf, supportRequiredProperties, schemas, discriminator?.propertyName);
     }
 
     public Task Generate(string path, string @namespace, string modifier, string name, string? jsonConstructorAttribute, bool supportRequiredProperties, IReadOnlyDictionary<string, SwaggerSchema> schemas, CancellationToken token)
@@ -151,19 +146,19 @@ internal class SwaggerSchema
         name = name.AsSafeString();
         var fileName = Path.Combine(path, name + ".cs");
 
-        var attributes = string.Empty;
-        if (discriminator is not null && properties.TryGetValue(discriminator.propertyName, out var property))
+        string attributes = "";
+        if (properties is not null && discriminator is not null && properties.TryGetValue(discriminator.propertyName, out SwaggerSchemaProperty? discriminatorProperty))
         {
-            properties.Remove(discriminator.propertyName);
-            var discriminatorAttributes = $"[System.Text.Json.Serialization.JsonPolymorphic(TypeDiscriminatorPropertyName = \"{discriminator.propertyName}\")]{Environment.NewLine}";
-            discriminatorAttributes += string.Join(Environment.NewLine, discriminator.mapping
-                .Select(x => new
-                {
-                    TypeName = x.Value.Replace("#/components/schemas/", "").AsSafeString(),
-                    DiscriminatorValue = x.Key
-                })
-                .Where(x => schemas.ContainsKey(x.TypeName))
-                .Select(x => $"[System.Text.Json.Serialization.JsonDerivedType(typeof({x.TypeName}), typeDiscriminator: \"{x.DiscriminatorValue}\")]"));
+            string discriminatorAttributes = $"[System.Text.Json.Serialization.JsonPolymorphic(TypeDiscriminatorPropertyName = \"{discriminator.propertyName}\")]{Environment.NewLine}" +
+                                                string.Join(Environment.NewLine, discriminator.mapping
+                                                                                              .Select(x => new
+                                                                                              {
+                                                                                                  TypeName = x.Value.Replace("#/components/schemas/", "").AsSafeString(),
+                                                                                                  DiscriminatorValue = x.Key
+                                                                                              })
+                                                                                              .Where(x => schemas.ContainsKey(x.TypeName))
+                                                                                              .Select(x => $"[System.Text.Json.Serialization.JsonDerivedType(typeof({x.TypeName}), typeDiscriminator: \"{x.DiscriminatorValue}\")]"));
+
             attributes += Environment.NewLine + discriminatorAttributes;
         }
 
@@ -188,7 +183,7 @@ internal class SwaggerSchema
         {
             if (properties is not null)
             {
-                foreach (var property in properties)
+                foreach (var property in IterateProperties()!)
                 {
                     foreach (var component in property.Value.GetComponents(schemas, depth))
                     {

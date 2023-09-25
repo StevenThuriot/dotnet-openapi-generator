@@ -30,7 +30,7 @@ internal class SwaggerDocument
         string clientModifierValue = options.ClientModifier?.ToString().ToLowerInvariant() ?? modifierValue;
 
         IEnumerable<string> usedComponents = await paths.Generate(path, @namespace, modifierValue, excludeObsolete, filter, includeInterfaces, clientModifierValue, stringBuilderPoolSize, options.OAuthType, includeJsonSourceGenerators, token);
-        
+
         await components.Generate(path, @namespace, modifierValue, clientModifierValue, usedComponents, treeShaking, jsonConstructorAttribute, includeJsonSourceGenerators, supportRequiredProperties, token);
 
         if (!options.ExcludeProject)
