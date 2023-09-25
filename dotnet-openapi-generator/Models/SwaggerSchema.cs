@@ -13,6 +13,7 @@ internal class SwaggerSchema
     public SwaggerSchemaProperties? properties { get; set; }
 
     public SwaggerAllOfs? allOf { get; set; }
+    public SwaggerSchemaDiscriminator? discriminator { get; set; }
 
     private string GetDefinitionType(string name, IEnumerable<SwaggerSchema> schemas)
     {
@@ -146,9 +147,24 @@ internal class SwaggerSchema
         name = name.AsSafeString();
         var fileName = Path.Combine(path, name + ".cs");
 
+        var attributes = string.Empty;
+        if (discriminator is not null)
+        {
+            var discriminatorAttributes = $"[System.Text.Json.Serialization.JsonPolymorphic(TypeDiscriminatorPropertyName = \"{discriminator.propertyName}\")]{Environment.NewLine}";
+            discriminatorAttributes += string.Join(Environment.NewLine, discriminator.mapping
+                .Select(x => new
+                {
+                    TypeName = x.Value.Replace("#/components/schemas/", "").AsSafeString(),
+                    DiscriminatorValue = x.Key
+                })
+                .Where(x => schemas.ContainsKey(x.TypeName))
+                .Select(x => $"[System.Text.Json.Serialization.JsonDerivedType(typeof({x.TypeName}), typeDiscriminator: \"{x.DiscriminatorValue}\")]"));
+            attributes += Environment.NewLine + discriminatorAttributes;
+        }
+
         var template = Constants.Header + $@"namespace {@namespace}.Models;
 
-[System.CodeDom.Compiler.GeneratedCode(""dotnet-openapi-generator"", ""{Constants.ProductVersion}"")]
+[System.CodeDom.Compiler.GeneratedCode(""dotnet-openapi-generator"", ""{Constants.ProductVersion}"")]{attributes}
 {(@enum is null
     ? "[System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]" + Environment.NewLine
     : FlaggedEnum is not null
