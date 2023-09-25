@@ -141,25 +141,28 @@ internal class SwaggerSchema
         return @enum?.GetBody(FlaggedEnum, EnumNames) ?? properties?.GetBody(allOf, supportRequiredProperties, schemas, discriminator?.propertyName);
     }
 
-    public Task Generate(string path, string @namespace, string modifier, string name, string? jsonConstructorAttribute, bool supportRequiredProperties, IReadOnlyDictionary<string, SwaggerSchema> schemas, CancellationToken token)
+    public Task Generate(string path, string @namespace, string modifier, string name, string? jsonConstructorAttribute, string? jsonPolymorphicAttribute, string? jsonDerivedTypeAttribute, bool supportRequiredProperties, IReadOnlyDictionary<string, SwaggerSchema> schemas, CancellationToken token)
     {
         name = name.AsSafeString();
         var fileName = Path.Combine(path, name + ".cs");
 
         string attributes = "";
-        if (properties is not null && discriminator is not null && properties.TryGetValue(discriminator.propertyName, out SwaggerSchemaProperty? discriminatorProperty))
+        if (jsonPolymorphicAttribute is not null && jsonDerivedTypeAttribute is not null)
         {
-            string discriminatorAttributes = $"[System.Text.Json.Serialization.JsonPolymorphic(TypeDiscriminatorPropertyName = \"{discriminator.propertyName}\")]{Environment.NewLine}" +
-                                                string.Join(Environment.NewLine, discriminator.mapping
-                                                                                              .Select(x => new
-                                                                                              {
-                                                                                                  TypeName = x.Value.Replace("#/components/schemas/", "").AsSafeString(),
-                                                                                                  DiscriminatorValue = x.Key
-                                                                                              })
-                                                                                              .Where(x => schemas.ContainsKey(x.TypeName))
-                                                                                              .Select(x => $"[System.Text.Json.Serialization.JsonDerivedType(typeof({x.TypeName}), typeDiscriminator: \"{x.DiscriminatorValue}\")]"));
+            if (properties is not null && discriminator is not null && properties.TryGetValue(discriminator.propertyName, out SwaggerSchemaProperty? discriminatorProperty))
+            {
+                string discriminatorAttributes = $"[{jsonPolymorphicAttribute.Replace("{name}", discriminator.propertyName)}]{Environment.NewLine}" +
+                                                    string.Join(Environment.NewLine, discriminator.mapping
+                                                                                                  .Select(x => new
+                                                                                                  {
+                                                                                                      TypeName = x.Value.ResolveType(),
+                                                                                                      DiscriminatorValue = x.Key
+                                                                                                  })
+                                                                                                  .Where(x => schemas.ContainsKey(x.TypeName))
+                                                                                                  .Select(x => $"[{jsonDerivedTypeAttribute.Replace("{type}", x.TypeName).Replace("{value}", x.DiscriminatorValue)}]"));
 
-            attributes += Environment.NewLine + discriminatorAttributes;
+                attributes += Environment.NewLine + discriminatorAttributes;
+            }
         }
 
         var template = Constants.Header + $@"namespace {@namespace}.Models;
