@@ -41,7 +41,7 @@ internal class SwaggerSchemaProperties : Dictionary<string, SwaggerSchemaPropert
         return builder.ToString().TrimEnd();
     }
 
-    private IEnumerable<string> GetAllYields(SwaggerAllOfs? allOf, IReadOnlyDictionary<string, SwaggerSchema> schemas)
+    private IEnumerable<string> GetAllYields(SwaggerAllOfs? allOf, IReadOnlyDictionary<string, SwaggerSchema> schemas, string? discriminatorProperty = null)
     {
         if (allOf is not null)
         {
@@ -52,7 +52,7 @@ internal class SwaggerSchemaProperties : Dictionary<string, SwaggerSchemaPropert
                 {
                     if (parentSchema.properties is not null)
                     {
-                        foreach (var parentYield in parentSchema.properties.GetAllYields(parentSchema.allOf, schemas))
+                        foreach (var parentYield in parentSchema.properties.GetAllYields(parentSchema.allOf, schemas, parentSchema.discriminator?.propertyName))
                         {
                             yield return parentYield;
                         }
@@ -61,7 +61,7 @@ internal class SwaggerSchemaProperties : Dictionary<string, SwaggerSchemaPropert
             }
         }
 
-        foreach (var key in Keys)
+        foreach (var key in Keys.Where(x => x != discriminatorProperty))
         {
             yield return key;
         }

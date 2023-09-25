@@ -106,7 +106,11 @@ internal class SwaggerSchema
 
     private HashSet<(string key, SwaggerSchemaProperty value)> GetRequiredProperties()
     {
-        return properties?.Where(x => x.Value.required.GetValueOrDefault() || !x.Value.nullable).Select(x => (x.Key, x.Value)).ToHashSet() ?? new(0);
+        return properties?
+            .Where(x => x.Key != discriminator?.propertyName)
+            .Where(x => x.Value.required.GetValueOrDefault() || !x.Value.nullable)
+            .Select(x => (x.Key, x.Value))
+            .ToHashSet() ?? new(0);
     }
 
     private string GetInheritance()
@@ -148,8 +152,9 @@ internal class SwaggerSchema
         var fileName = Path.Combine(path, name + ".cs");
 
         var attributes = string.Empty;
-        if (discriminator is not null)
+        if (discriminator is not null && properties.TryGetValue(discriminator.propertyName, out var property))
         {
+            properties.Remove(discriminator.propertyName);
             var discriminatorAttributes = $"[System.Text.Json.Serialization.JsonPolymorphic(TypeDiscriminatorPropertyName = \"{discriminator.propertyName}\")]{Environment.NewLine}";
             discriminatorAttributes += string.Join(Environment.NewLine, discriminator.mapping
                 .Select(x => new
