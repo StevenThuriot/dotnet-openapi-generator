@@ -3,10 +3,6 @@
     "help": {
       "commandName": "Project",
       "commandLineArgs": "--help"
-    },
-    "movu-webhooks": {
-      "commandName": "Project",
-      "commandLineArgs": "-p -c -d /Users/glenn/dev/stow-wes-demo/src/Movu.WES.Client/WebhookConsumerContract -n Movu.WES.Client.WebhookConsumerContract Movu.WES.Client.WebhookConsumerContract http://localhost:9732/swagger/v1-WebhookConsumerContract/swagger.json"
     }
   }
 }
