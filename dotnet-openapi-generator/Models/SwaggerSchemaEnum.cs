@@ -37,8 +37,6 @@ internal class SwaggerSchemaEnum : List<object>
                 name = value.ToString() ?? "";
             }
 
-            name = name.AsSafeString();
-
             if (char.IsDigit(name[0]))
             {
                 name = "_" + name;
