@@ -17,27 +17,27 @@ Major and Minor version numbers always dictate the dotnet version being used.
 
 ### netstandard 2.0 generator installation
 ```bash
-dotnet tool install dotnet-openapi-generator -g --version 2.0.0-preview.13
+dotnet tool install dotnet-openapi-generator -g --version 2.0.0-preview.14
 ```
 
 ### netstandard 2.1 generator installation
 ```bash
-dotnet tool install dotnet-openapi-generator -g --version 2.1.0-preview.13
+dotnet tool install dotnet-openapi-generator -g --version 2.1.0-preview.14
 ```
 
 ### dotnet 5.0 generator installation
 ```bash
-dotnet tool install dotnet-openapi-generator -g --version 5.0.0-preview.13
+dotnet tool install dotnet-openapi-generator -g --version 5.0.0-preview.14
 ```
 
 ### dotnet 6.0 generator installation
 ```bash
-dotnet tool install dotnet-openapi-generator -g --version 6.0.0-preview.13
+dotnet tool install dotnet-openapi-generator -g --version 6.0.0-preview.14
 ```
 
 ### dotnet 7.0 generator installation
 ```bash
-dotnet tool install dotnet-openapi-generator -g --version 7.0.0-preview.13
+dotnet tool install dotnet-openapi-generator -g --version 7.0.0-preview.14
 ```
 
 
@@ -101,7 +101,7 @@ Steven Thuriot
 
   value pos. 0                       Required. Name of the project
 
-  value pos. 1                       Required. Location of the swagger document. Can be both an http location or a local one
+  value pos. 1                       Required. Location of the JSON swagger document. Can be both an http location or a local one
 ```
 
 ## Registration

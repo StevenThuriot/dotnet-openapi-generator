@@ -16,6 +16,13 @@ internal class SwaggerSchemaEnum : List<object>
             string name;
             var value = this[i];
 
+            if (value is null)
+            {
+                //Some documents that define the enum as nullable, also include the null value.
+                //This is handled differently in dotnet and should be skipped here.
+                continue;
+            }
+
             if (enumNames is not null)
             {
                 name = enumNames[i];
@@ -30,7 +37,9 @@ internal class SwaggerSchemaEnum : List<object>
                 name = value.ToString() ?? "";
             }
 
-            if (Char.IsDigit(name[0]))
+            name = name.AsSafeString();
+
+            if (char.IsDigit(name[0]))
             {
                 name = "_" + name;
             }

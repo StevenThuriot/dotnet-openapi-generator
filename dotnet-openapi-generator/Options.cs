@@ -8,7 +8,7 @@ public class Options
     [Value(0, Required = true, HelpText = "Name of the project")]
     public string ProjectName { get; set; } = default!;
 
-    [Value(1, Required = true, HelpText = "Location of the swagger document. Can be both an http location or a local one")]
+    [Value(1, Required = true, HelpText = "Location of the JSON swagger document. Can be both an http location or a local one")]
     public string DocumentLocation { get; set; } = default!;
 
     [Option('n', "namespace", Required = false, HelpText = "(Default: Project name) The namespace used for the generated files")]
