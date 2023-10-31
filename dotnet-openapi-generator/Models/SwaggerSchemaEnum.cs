@@ -37,8 +37,13 @@ internal class SwaggerSchemaEnum : List<object>
                 name = value.ToString() ?? "";
             }
 
-            name = name.AsSafeCSharpName("@", "_");
+            //var safeName = name.AsSafeString().AsSafeCSharpName("@", "_");
 
+            //if (safeName != name)
+            //{
+                //name = $@"[System.Runtime.Serialization.EnumMember(Value = ""{name}"")]{safeName}";
+            //}
+            
             if (!unique.Add(name))
             {
                 continue;
