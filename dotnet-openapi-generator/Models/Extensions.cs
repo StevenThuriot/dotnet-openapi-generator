@@ -38,15 +38,16 @@ internal static class Extensions
                      .AsSafeString(replaceDots: true, replacement: "");
     }
 
-    private static string AsSafeCSharpName(this string value, string prefix)
+    public static string AsSafeCSharpName(this string value, string prefix) => value.AsSafeCSharpName(prefix, prefix);
+    public static string AsSafeCSharpName(this string value, string keywordPrefix, string numberPrefix)
     {
         if (s_keywords.Contains(value))
         {
-            value = prefix + value;
+            value = keywordPrefix + value;
         }
         else if (char.IsNumber(value[0]))
         {
-            value = prefix + value;
+            value = numberPrefix + value;
         }
 
         return value;
@@ -134,6 +135,7 @@ internal static class Extensions
             "boolean" => "bool",
             "int32" or "integer" => "int",
             "int64" => "long",
+            "json" => "string",
             "uri" => typeof(Uri).FullName!,
             "uuid" => typeof(Guid).FullName!,
             "binary" => typeof(Stream).FullName!,
