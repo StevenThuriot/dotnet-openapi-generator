@@ -39,19 +39,31 @@ internal class SwaggerSchemaProperty
         return builder.ToString().TrimEnd();
     }
 
-    private string? TypeToResolve => format ?? type ?? @ref;
-    public string? ResolveType() => TypeToResolve.ResolveType(items, additionalProperties);
+    public string? ResolveType()
+    {
+        if (format is not null)
+        {
+            string? result = format.ResolveType(format.Contains("#/components/schemas/"), items, additionalProperties);
+            if (result is not null)
+            {
+                return result;
+            }
+        }
+
+        return (type ?? @ref).ResolveType(items, additionalProperties);
+    }
 
     public IEnumerable<string> GetComponents(IReadOnlyDictionary<string, SwaggerSchema> schemas, int depth)
     {
-        var typeToResolve = TypeToResolve;
-        var type = typeToResolve == "array" ? items.ResolveArrayType(additionalProperties) : ResolveType();
+        string? resolvedType = format == "array" || type == "array"
+                                ? items.ResolveArrayType(additionalProperties)
+                                : ResolveType();
 
-        if (!string.IsNullOrWhiteSpace(type))
+        if (!string.IsNullOrWhiteSpace(resolvedType))
         {
-            yield return type;
+            yield return resolvedType;
 
-            if (schemas.TryGetValue(type, out var schema))
+            if (schemas.TryGetValue(resolvedType, out var schema))
             {
                 foreach (var usedType in schema.GetComponents(schemas, depth))
                 {
