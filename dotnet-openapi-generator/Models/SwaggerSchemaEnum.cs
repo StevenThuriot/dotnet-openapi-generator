@@ -4,7 +4,7 @@ namespace dotnet.openapi.generator;
 
 internal class SwaggerSchemaEnum : List<object>
 {
-    public string GetBody(SwaggerSchemaFlaggedEnum? flaggedEnum, List<string>? enumNames)
+    public string GetBody(string enumName, SwaggerSchemaFlaggedEnum? flaggedEnum, List<string>? enumNames)
     {
         HashSet<string> unique = new(Count);
 
@@ -37,12 +37,18 @@ internal class SwaggerSchemaEnum : List<object>
                 name = value.ToString() ?? "";
             }
 
-            //var safeName = name.AsSafeString().AsSafeCSharpName("@", "_");
+            var safeName = name.AsSafeString().AsSafeCSharpName("@", "_");
 
-            //if (safeName != name)
-            //{
-                //name = $@"[System.Runtime.Serialization.EnumMember(Value = ""{name}"")]{safeName}";
-            //}
+            if (safeName.TrimStart('@') != name)
+            {
+                Logger.Break();
+                Logger.LogWarning($"Enum \'{enumName}\' has a value that's not supported: \'{name}\' --> \'{safeName}\'.");
+                Logger.LogWarning("\tThis has been marked with an EnumMember attribute.");
+                Logger.LogWarning("\tPlease manually add the needed serialization support to your ClientOptions.");
+                Logger.Break();
+
+                name = $@"[System.Runtime.Serialization.EnumMember(Value = ""{name}"")]{safeName}";
+            }
             
             if (!unique.Add(name))
             {

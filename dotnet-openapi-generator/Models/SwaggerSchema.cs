@@ -147,9 +147,9 @@ internal class SwaggerSchema
         return "";
     }
 
-    public string? GetBody(bool supportRequiredProperties, IReadOnlyDictionary<string, SwaggerSchema> schemas)
+    public string? GetBody(string name, bool supportRequiredProperties, IReadOnlyDictionary<string, SwaggerSchema> schemas)
     {
-        return @enum?.GetBody(FlaggedEnum, EnumNames) ?? properties?.GetBody(allOf, supportRequiredProperties, schemas, discriminator?.propertyName);
+        return @enum?.GetBody(name, FlaggedEnum, EnumNames) ?? properties?.GetBody(allOf, supportRequiredProperties, schemas, discriminator?.propertyName);
     }
 
     public Task Generate(string path, string @namespace, string modifier, string name, string? jsonConstructorAttribute, string? jsonPolymorphicAttribute, string? jsonDerivedTypeAttribute, bool supportRequiredProperties, IReadOnlyDictionary<string, SwaggerSchema> schemas, CancellationToken token)
@@ -185,7 +185,7 @@ internal class SwaggerSchema
         ? "[System.Flags]" + Environment.NewLine
         : "")}{modifier} {GetDefinitionType(name, schemas.Values)} {name}{GetInheritance()}
 {{{GetCtor(name, jsonConstructorAttribute, supportRequiredProperties, schemas)}
-{GetBody(supportRequiredProperties, schemas)}
+{GetBody(name, supportRequiredProperties, schemas)}
 }}
 ";
         return File.WriteAllTextAsync(fileName, template, token);
