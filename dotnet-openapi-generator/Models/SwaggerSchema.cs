@@ -1,4 +1,6 @@
-﻿namespace dotnet.openapi.generator;
+﻿using System.Text.Json.Serialization;
+
+namespace dotnet.openapi.generator;
 
 internal class SwaggerSchema
 {
@@ -82,17 +84,22 @@ internal class SwaggerSchema
         }
 
         var parameters = baseProperties.Union(requiredProperties).Select(x => x.value.ResolveType() + " " + x.key.AsSafeVariableName());
-        var assignements = requiredProperties.Select(x => 
+        var assignements = requiredProperties.Select(x =>
         {
-             var assignee = x.key[0..1].ToUpperInvariant() + x.key[1..];
-             var assignment =  x.key.AsSafeVariableName();
-             
-             if (assignee == assignment)
-             {
-                assignee = "this." + assignee;
-             }
+            var assignee = x.key[0..1].ToUpperInvariant() + x.key[1..];
+            var assignment = x.key.AsSafeVariableName();
 
-             return assignee + " = " + assignment + ";";
+            if (char.IsDigit(assignee[0]))
+            {
+                assignee = "_" + assignee;
+            }
+
+            if (assignee == assignment)
+            {
+                assignee = "this." + assignee;
+            }
+
+            return assignee + " = " + assignment + ";";
         });
 
         var requiredCtorAttributes = "";
@@ -147,12 +154,12 @@ internal class SwaggerSchema
         return "";
     }
 
-    public string? GetBody(string name, bool supportRequiredProperties, IReadOnlyDictionary<string, SwaggerSchema> schemas)
+    public string? GetBody(string name, bool supportRequiredProperties, string? jsonPropertyNameAttribute, IReadOnlyDictionary<string, SwaggerSchema> schemas)
     {
-        return @enum?.GetBody(name, FlaggedEnum, EnumNames) ?? properties?.GetBody(allOf, supportRequiredProperties, schemas, discriminator?.propertyName);
+        return @enum?.GetBody(name, FlaggedEnum, EnumNames) ?? properties?.GetBody(allOf, supportRequiredProperties, jsonPropertyNameAttribute, schemas, discriminator?.propertyName);
     }
 
-    public Task Generate(string path, string @namespace, string modifier, string name, string? jsonConstructorAttribute, string? jsonPolymorphicAttribute, string? jsonDerivedTypeAttribute, bool supportRequiredProperties, IReadOnlyDictionary<string, SwaggerSchema> schemas, CancellationToken token)
+    public Task Generate(string path, string @namespace, string modifier, string name, string? jsonConstructorAttribute, string? jsonPolymorphicAttribute, string? jsonDerivedTypeAttribute, string? jsonPropertyNameAttribute, bool supportRequiredProperties, IReadOnlyDictionary<string, SwaggerSchema> schemas, CancellationToken token)
     {
         name = name.AsSafeString();
         var fileName = Path.Combine(path, name + ".cs");
@@ -169,7 +176,7 @@ internal class SwaggerSchema
                                                                                                       TypeName = x.Value.ResolveType(),
                                                                                                       DiscriminatorValue = x.Key
                                                                                                   })
-                                                                                                  .Where(x => schemas.ContainsKey(x.TypeName))
+                                                                                                  .Where(x => x.TypeName is not null && schemas.ContainsKey(x.TypeName))
                                                                                                   .Select(x => $"[{jsonDerivedTypeAttribute.Replace("{type}", x.TypeName).Replace("{value}", x.DiscriminatorValue)}]"));
 
                 attributes += Environment.NewLine + discriminatorAttributes;
@@ -185,7 +192,7 @@ internal class SwaggerSchema
         ? "[System.Flags]" + Environment.NewLine
         : "")}{modifier} {GetDefinitionType(name, schemas.Values)} {name}{GetInheritance()}
 {{{GetCtor(name, jsonConstructorAttribute, supportRequiredProperties, schemas)}
-{GetBody(name, supportRequiredProperties, schemas)}
+{GetBody(name, supportRequiredProperties, jsonPropertyNameAttribute, schemas)}
 }}
 ";
         return File.WriteAllTextAsync(fileName, template, token);

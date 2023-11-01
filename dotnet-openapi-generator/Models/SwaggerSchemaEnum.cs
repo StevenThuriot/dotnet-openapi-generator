@@ -49,7 +49,11 @@ internal class SwaggerSchemaEnum : List<object>
 
                 name = $@"[System.Runtime.Serialization.EnumMember(Value = ""{name}"")]{safeName}";
             }
-            
+            else
+            {
+                name = safeName;
+            }
+
             if (!unique.Add(name))
             {
                 continue;

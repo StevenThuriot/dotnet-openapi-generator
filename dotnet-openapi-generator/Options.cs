@@ -41,6 +41,9 @@ public class Options
     [Option("json-derived-type-attribute", Required = false, HelpText = "Json Derived Type Attribute. Marks the derived types of the generated types using the specified attribute. {type} and {value} are used as a template placeholders", Default = "System.Text.Json.Serialization.JsonDerivedType(typeof({type}), typeDiscriminator: \"{value}\")")]
     public string? JsonDerivedTypeAttribute { get; set; }
 
+    [Option("json-property-name-attribute", Required = false, HelpText = "Json Property Name Attribute. Some property names are not valid in C#. This will make sure serialization works out. {name} is used as a template placeholder", Default = "System.Text.Json.Serialization.JsonPropertyName(\"{name}\")")]
+    public string? JsonPropertyNameAttribute { get; set; }
+
 #if NET7_0_OR_GREATER
     [Option('j', "json-source-generators", Required = false, HelpText = "Include dotnet 7.0+ Json Source Generators", Default = false)]
 #endif

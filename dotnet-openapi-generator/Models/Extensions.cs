@@ -4,7 +4,7 @@ namespace dotnet.openapi.generator;
 
 internal static class Extensions
 {
-    public static string AsSafeVariableName(this string value, string prefix = "@")
+    public static string AsSafeVariableName(this string value, string keywordPrefix = "@", string numberPrefix = "_")
     {
         if (string.IsNullOrEmpty(value))
         {
@@ -15,7 +15,7 @@ internal static class Extensions
             ? value
             : value[0..1].ToLowerInvariant() + value[1..];
 
-        return result.AsSafeCSharpName(prefix);
+        return result.AsSafeCSharpName(keywordPrefix, numberPrefix);
     }
 
     public static string AsSafeClientName(this string value, string prefix = "_")

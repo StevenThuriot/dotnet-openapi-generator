@@ -15,9 +15,20 @@ internal class SwaggerSchemaProperty
     public SwaggerSchemaPropertyAdditionalProperties? additionalProperties { get; set; }
     public System.Text.Json.JsonElement? items { get; set; }
 
-    public string GetBody(string name, bool supportRequiredProperties)
+    public string GetBody(string name, bool supportRequiredProperties, string? jsonPropertyNameAttribute)
     {
-        StringBuilder builder = new("public ");
+        StringBuilder builder = new();
+
+        bool startsWithDigit = char.IsDigit(name[0]);
+
+        if (startsWithDigit && jsonPropertyNameAttribute is not null)
+        {
+            builder.Append('[')
+                   .Append(jsonPropertyNameAttribute.Replace("{name}", name))
+                   .Append(']');
+        }
+
+        builder.Append("public ");
 
         if (supportRequiredProperties && (!nullable || required.GetValueOrDefault()))
         {
@@ -31,8 +42,14 @@ internal class SwaggerSchemaProperty
             builder.Append('?');
         }
 
-        builder.Append(' ')
-               .Append(name[0..1].ToUpperInvariant())
+        builder.Append(' ');
+
+        if (char.IsDigit(name[0]))
+        {
+            builder.Append('_');
+        }
+
+        builder.Append(name[0..1].ToUpperInvariant())
                .Append(name[1..])
                .Append(" { get; set; }");
 

@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using System.Text.Json.Serialization;
 
 namespace dotnet.openapi.generator;
 
@@ -15,13 +16,13 @@ internal class SwaggerSchemaProperties : Dictionary<string, SwaggerSchemaPropert
         }
     }
 
-    public string GetBody(SwaggerAllOfs? allOf, bool supportRequiredProperties, IReadOnlyDictionary<string, SwaggerSchema> schemas, string? exclusion)
+    public string GetBody(SwaggerAllOfs? allOf, bool supportRequiredProperties, string? jsonPropertyNameAttribute, IReadOnlyDictionary<string, SwaggerSchema> schemas, string? exclusion)
     {
         StringBuilder builder = new();
 
         foreach (var item in Iterate(exclusion))
         {
-            builder.Append('\t').AppendLine(item.Value.GetBody(item.Key, supportRequiredProperties));
+            builder.Append('\t').AppendLine(item.Value.GetBody(item.Key, supportRequiredProperties, jsonPropertyNameAttribute));
         }
 
         builder.AppendLine()
@@ -41,8 +42,14 @@ internal class SwaggerSchemaProperties : Dictionary<string, SwaggerSchemaPropert
                 builder.Append('\t').Append('\t')
                        .Append("yield return (\"")
                        .Append(item)
-                       .Append("\", ")
-                       .Append(item[0..1].ToUpperInvariant()).Append(item[1..])
+                       .Append("\", ");
+
+                if (char.IsDigit(item[0]))
+                {
+                    builder.Append('_');
+                }
+
+                builder.Append(item[0..1].ToUpperInvariant()).Append(item[1..])
                        .AppendLine(");");
             }
         }
