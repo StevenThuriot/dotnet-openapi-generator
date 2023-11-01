@@ -38,7 +38,7 @@ public class Options
     [Option("json-polymorphic-attribute", Required = false, HelpText = "Json Polymorphic Attribute. Marks the generated types as polymorphic using the specified attribute. {name} is used as a template placeholder", Default = "System.Text.Json.Serialization.JsonPolymorphic(TypeDiscriminatorPropertyName = \"{name}\")")]
     public string? JsonPolymorphicAttribute { get; set; }
 
-    [Option("json-derived-type-attribute", Required = false, HelpText = "Json Derived Type Attribute. Marks the derived types of the generated types using the specified attribute. {type} and {value} are used as a template placeholders", Default = "System.Text.Json.Serialization.JsonDerivedType(typeof({type}), typeDiscriminator: \"{value}\")")]
+    [Option("json-derived-type-attribute", Required = false, HelpText = "Json Derived Type Attribute. Marks the derived types of the generated types using the specified attribute. {type} and {value} are used as template placeholders", Default = "System.Text.Json.Serialization.JsonDerivedType(typeof({type}), typeDiscriminator: \"{value}\")")]
     public string? JsonDerivedTypeAttribute { get; set; }
 
     [Option("json-property-name-attribute", Required = false, HelpText = "Json Property Name Attribute. Some property names are not valid in C#. This will make sure serialization works out. {name} is used as a template placeholder", Default = "System.Text.Json.Serialization.JsonPropertyName(\"{name}\")")]

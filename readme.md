@@ -71,7 +71,12 @@ Steven Thuriot
 
   --json-derived-type-attribute      (Default: System.Text.Json.Serialization.JsonDerivedType(typeof({type}), typeDiscriminator: "{value}")) 
                                      Json Derived Type Attribute. Marks the derived types of the generated types using the specified attribute.
-                                     {type} and {value} are used as a template placeholders
+                                     {type} and {value} are used as template placeholders
+
+  --json-property-name-attribute     (Default: System.Text.Json.Serialization.JsonPropertyName("{name}"))
+                                     Json Property Name Attribute. Some property names are not valid in C#. This will make sure serialization works out.
+                                     {name} is used as a template placeholder
+
 
   -j, --json-source-generators       (Default: false) Include dotnet 7.0+ Json Source Generators
 
