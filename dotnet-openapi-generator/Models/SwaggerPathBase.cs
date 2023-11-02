@@ -90,6 +90,15 @@ internal abstract class SwaggerPathBase
                     safeString = "\"\" + " + safeString;
                 }
 
+                //TODO: if enum
+                // switch
+                //{
+                //    enum.Value => "Value",
+                //    _ => null
+                //
+                //}
+
+
                 headersToAdd += $@"
         if ({header.name.AsSafeString()} != default)
         {{

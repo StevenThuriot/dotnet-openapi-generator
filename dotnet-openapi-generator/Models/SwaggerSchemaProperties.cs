@@ -49,8 +49,17 @@ internal class SwaggerSchemaProperties : Dictionary<string, SwaggerSchemaPropert
                     builder.Append('_');
                 }
 
-                builder.Append(item[0..1].ToUpperInvariant()).Append(item[1..])
-                       .AppendLine(");");
+                builder.Append(item[0..1].ToUpperInvariant()).Append(item[1..]);
+
+                //TODO: if enum
+                // switch
+                //{
+                //    enum.Value => "Value",
+			    //    _ => null
+                //
+                //}
+
+                builder.AppendLine(");");
             }
         }
 
