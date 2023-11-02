@@ -53,8 +53,14 @@ internal class SwaggerSchemaProperties : Dictionary<string, SwaggerSchemaPropert
 
                 if (property.@ref is not null)
                 {
-                    var result = schemas.GenerateFastEnumToString(property.ResolveType()!, propertyName);
-                    builder.Append(result ?? propertyName);
+                    if (schemas.TryGenerateFastEnumToString(property.ResolveType()!, propertyName, out var result))
+                    {
+                        builder.Append(result);
+                    }
+                    else
+                    {
+                        builder.Append(propertyName);
+                    }
                 }
                 else
                 {

@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Text;
 using System.Text.Json.Serialization;
 
 namespace dotnet.openapi.generator;
@@ -9,16 +10,18 @@ internal class SwaggerComponentSchemas : Dictionary<string, SwaggerSchema>
 
     public SwaggerComponentSchemas(IDictionary<string, SwaggerSchema> values) : base(values) { }
 
-    public string? GenerateFastEnumToString(string type, string property)
+    public bool TryGenerateFastEnumToString(string type, string property, [NotNullWhen(true)] out string? result)
     {
         if (type is null || !TryGetValue(type, out var schema))
         {
-            return null;
+            result = null;
+            return false;
         }
 
         if (schema.@enum is null)
         {
-            return null;
+            result = null;
+            return false;
         }
 
         StringBuilder builder = new(property);
@@ -40,6 +43,7 @@ internal class SwaggerComponentSchemas : Dictionary<string, SwaggerSchema>
         builder.AppendLine("\t\t\t_ => null");
         builder.Append("\t\t}");
 
-        return builder.ToString();
+        result = builder.ToString();
+        return true;
     }
 }

@@ -73,9 +73,12 @@ internal abstract class SwaggerPathBase
             {
                 var syntax = x.name.AsSafeString();
 
-                var fastToString = componentSchemas.GenerateFastEnumToString(x.GetComponentType()!, syntax);
+                if (componentSchemas.TryGenerateFastEnumToString(x.GetComponentType()!, syntax, out var fastToString))
+                {
+                    return fastToString;
+                }
 
-                return fastToString ?? syntax;
+                return syntax;
             }
         }
 
@@ -99,13 +102,9 @@ internal abstract class SwaggerPathBase
                     safeString = "\"\" + " + safeString;
                 }
 
-                if (header.schema.@ref is not null)
+                if (header.schema.@ref is not null && componentSchemas.TryGenerateFastEnumToString(type, safeString, out var fastToString))
                 {
-                    var fastToStringResult = componentSchemas.GenerateFastEnumToString(type, safeString);
-                    if (fastToStringResult is not null)
-                    {
-                        safeString = fastToStringResult;
-                    }
+                    safeString = fastToString;
                 }
 
                 headersToAdd += $@"
