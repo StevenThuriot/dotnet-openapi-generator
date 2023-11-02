@@ -6,7 +6,7 @@ namespace dotnet.openapi.generator;
 
 internal class SwaggerPaths : Dictionary<string, SwaggerPath>
 {
-    public async Task<IEnumerable<string>> Generate(string path, string @namespace, string modifier, bool excludeObsolete, Regex? filter, bool includeInterfaces, string clientModifier, int stringBuilderPoolSize, OAuthType oAuthType, bool includeJsonSourceGenerators, CancellationToken token)
+    public async Task<IEnumerable<string>> Generate(string path, string @namespace, string modifier, bool excludeObsolete, Regex? filter, bool includeInterfaces, string clientModifier, int stringBuilderPoolSize, OAuthType oAuthType, bool includeJsonSourceGenerators, SwaggerComponentSchemas componentSchemas, CancellationToken token)
     {
         path = Path.Combine(path, "Clients");
 
@@ -24,11 +24,9 @@ internal class SwaggerPaths : Dictionary<string, SwaggerPath>
             return Enumerable.Empty<string>();
         }
 
-        HashSet<string> usedComponents = new();
-
         await GenerateClientOptions(path, @namespace, modifier, oAuthType is not OAuthType.None, includeJsonSourceGenerators, token);
         await GenerateQueryBuilder(path, @namespace, stringBuilderPoolSize, token);
-        await GenerateClients(path, @namespace, modifier, excludeObsolete, includeInterfaces, clientModifier, clients, usedComponents, token);
+        var usedComponents = await GenerateClients(path, @namespace, modifier, excludeObsolete, includeInterfaces, clientModifier, clients, componentSchemas, token);
         await GenerateRegistrations(path, @namespace, modifier, includeInterfaces, clients.Keys, oAuthType, token);
 
         return usedComponents;
@@ -342,8 +340,10 @@ namespace {@namespace};
 ", token);
     }
 
-    private static async Task GenerateClients(string path, string @namespace, string modifier, bool excludeObsolete, bool includeInterfaces, string clientModifier, Dictionary<string, List<(string apiPath, SwaggerPathBase path)>> clients, HashSet<string> usedComponents, CancellationToken token)
+    private static async Task<IReadOnlyCollection<string>> GenerateClients(string path, string @namespace, string modifier, bool excludeObsolete, bool includeInterfaces, string clientModifier, Dictionary<string, List<(string apiPath, SwaggerPathBase path)>> clients, SwaggerComponentSchemas componentSchemas, CancellationToken token)
     {
+        HashSet<string> usedComponents = new();
+
         Logger.LogInformational("Generating Clients");
 
         int i = 0;
@@ -401,7 +401,7 @@ namespace {@namespace}.Clients;
 
                 foreach (var item in client.Value)
                 {
-                    var body = item.path.GetBody(item.apiPath, methodNames, excludeObsolete);
+                    var body = item.path.GetBody(item.apiPath, methodNames, excludeObsolete, componentSchemas);
 
                     foreach (var componennt in item.path.GetComponents())
                     {
@@ -421,7 +421,7 @@ namespace {@namespace}.Clients;
 
                 foreach (var item in client.Value)
                 {
-                    var body = item.path.GetBodySignature(item.apiPath, methodNames, excludeObsolete);
+                    var body = item.path.GetBodySignature(item.apiPath, methodNames, excludeObsolete, componentSchemas);
 
                     foreach (var componennt in item.path.GetComponents())
                     {
@@ -459,6 +459,8 @@ namespace {@namespace}.Clients;
         }
 
         Logger.BlankLine();
+
+        return usedComponents;
     }
 
     private static async Task GenerateQueryBuilder(string path, string @namespace, int stringBuilderPoolSize, CancellationToken token)

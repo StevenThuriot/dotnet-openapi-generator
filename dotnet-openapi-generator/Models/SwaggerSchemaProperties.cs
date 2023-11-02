@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Reflection.PortableExecutable;
+using System.Text;
 using System.Text.Json.Serialization;
 
 namespace dotnet.openapi.generator;
@@ -16,7 +17,7 @@ internal class SwaggerSchemaProperties : Dictionary<string, SwaggerSchemaPropert
         }
     }
 
-    public string GetBody(SwaggerAllOfs? allOf, bool supportRequiredProperties, string? jsonPropertyNameAttribute, IReadOnlyDictionary<string, SwaggerSchema> schemas, string? exclusion)
+    public string GetBody(SwaggerAllOfs? allOf, bool supportRequiredProperties, string? jsonPropertyNameAttribute, SwaggerComponentSchemas schemas, string? exclusion)
     {
         StringBuilder builder = new();
 
@@ -29,7 +30,7 @@ internal class SwaggerSchemaProperties : Dictionary<string, SwaggerSchemaPropert
                .Append('\t').AppendLine("System.Collections.Generic.IEnumerable<(string name, object? value)> __ICanIterate.IterateProperties()")
                .Append('\t').AppendLine("{");
 
-        var yields = GetAllYields(allOf, schemas, exclusion).ToHashSet();
+        var yields = GetAllYields(allOf, schemas, exclusion).DistinctBy(x => x.Key).ToDictionary(x => x.Key, x => x.Value);
 
         if (yields.Count == 0)
         {
@@ -37,27 +38,28 @@ internal class SwaggerSchemaProperties : Dictionary<string, SwaggerSchemaPropert
         }
         else
         {
-            foreach (var item in yields)
+            foreach (var (item, property) in yields)
             {
                 builder.Append('\t').Append('\t')
                        .Append("yield return (\"")
                        .Append(item)
                        .Append("\", ");
 
+                var propertyName = item[0..1].ToUpperInvariant() + item[1..];
                 if (char.IsDigit(item[0]))
                 {
-                    builder.Append('_');
+                    propertyName = '_' + propertyName;
                 }
 
-                builder.Append(item[0..1].ToUpperInvariant()).Append(item[1..]);
-
-                //TODO: if enum
-                // switch
-                //{
-                //    enum.Value => "Value",
-			    //    _ => null
-                //
-                //}
+                if (property.@ref is not null)
+                {
+                    var result = schemas.GenerateFastEnumToString(property.ResolveType()!, propertyName);
+                    builder.Append(result ?? propertyName);
+                }
+                else
+                {
+                    builder.Append(propertyName);
+                }
 
                 builder.AppendLine(");");
             }
@@ -68,7 +70,7 @@ internal class SwaggerSchemaProperties : Dictionary<string, SwaggerSchemaPropert
         return builder.ToString().TrimEnd();
     }
 
-    private IEnumerable<string> GetAllYields(SwaggerAllOfs? allOf, IReadOnlyDictionary<string, SwaggerSchema> schemas, string? discriminatorProperty)
+    private IEnumerable<(string Key, SwaggerSchemaProperty Value)> GetAllYields(SwaggerAllOfs? allOf, IReadOnlyDictionary<string, SwaggerSchema> schemas, string? discriminatorProperty)
     {
         if (allOf is not null)
         {
@@ -88,9 +90,9 @@ internal class SwaggerSchemaProperties : Dictionary<string, SwaggerSchemaPropert
             }
         }
 
-        foreach (var (key, _) in Iterate(discriminatorProperty))
+        foreach (var item in Iterate(discriminatorProperty))
         {
-            yield return key;
+            yield return item;
         }
     }
 }

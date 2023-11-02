@@ -1,9 +1,47 @@
 ﻿using System.Text;
+using System.Xml;
 
 namespace dotnet.openapi.generator;
 
 internal class SwaggerSchemaEnum : List<object>
 {
+    public IEnumerable<(string name, string safeName)> IterateValues(SwaggerSchemaFlaggedEnum? flaggedEnum, List<string>? enumNames)
+    {
+        HashSet<string> unique = new(Count);
+
+        string name, safeName;
+
+        for (int i = 0; i < Count; i++)
+        {
+            var valueObject = this[i];
+
+            if (valueObject is null)
+            {
+                //Some documents that define the enum as nullable, also include the null value.
+                //This is handled differently in dotnet and should be skipped here.
+                continue;
+            }
+
+            if (enumNames is not null)
+            {
+                name = enumNames[i];
+            }
+            else
+            {
+                name = valueObject.ToString() ?? "";
+            }
+
+            safeName = name.AsSafeString().AsSafeCSharpName("@", "_");
+
+            if (!unique.Add(safeName))
+            {
+                continue;
+            }
+
+            yield return (name, safeName);
+        }
+    }
+
     public string GetBody(string enumName, SwaggerSchemaFlaggedEnum? flaggedEnum, List<string>? enumNames)
     {
         HashSet<string> unique = new(Count);

@@ -16,10 +16,10 @@ internal abstract class SwaggerPathBase
 
     public string? operationId { get; set; }
 
-    public string GetBodySignature(string apiPath, HashSet<string> methodNames, bool excludeObsolete) => GetBodyInternal(apiPath, methodNames, excludeObsolete, true);
-    public string GetBody(string apiPath, HashSet<string> methodNames, bool excludeObsolete) => GetBodyInternal(apiPath, methodNames, excludeObsolete, false);
+    public string GetBodySignature(string apiPath, HashSet<string> methodNames, bool excludeObsolete, SwaggerComponentSchemas componentSchemas) => GetBodyInternal(apiPath, methodNames, excludeObsolete, true, componentSchemas);
+    public string GetBody(string apiPath, HashSet<string> methodNames, bool excludeObsolete, SwaggerComponentSchemas componentSchemas) => GetBodyInternal(apiPath, methodNames, excludeObsolete, false, componentSchemas);
 
-    private string GetBodyInternal(string apiPath, HashSet<string> methodNames, bool excludeObsolete, bool signaturesOnly)
+    private string GetBodyInternal(string apiPath, HashSet<string> methodNames, bool excludeObsolete, bool signaturesOnly, SwaggerComponentSchemas componentSchemas)
     {
         if (excludeObsolete && deprecated)
         {
@@ -66,8 +66,17 @@ internal abstract class SwaggerPathBase
         var queryContent = "";
         if (queryParams.Count > 0)
         {
-            queryContent += "__QueryBuilder __my_queryBuilder = new();" + Environment.NewLine + string.Concat(queryParams.Select(x => $"        __my_queryBuilder.AddParameter({x.name.AsSafeString()}, \"{x.name.TrimStart('@')}\");" + Environment.NewLine)) + Environment.NewLine + "        ";
+            queryContent += "__QueryBuilder __my_queryBuilder = new();" + Environment.NewLine + string.Concat(queryParams.Select(x => $"        __my_queryBuilder.AddParameter({GenerateParameterSyntax(x)}, \"{x.name.TrimStart('@')}\");" + Environment.NewLine)) + Environment.NewLine + "        ";
             apiPath += "{__my_queryBuilder}";
+
+            string GenerateParameterSyntax(SwaggerPathParameter x)
+            {
+                var syntax = x.name.AsSafeString();
+
+                var fastToString = componentSchemas.GenerateFastEnumToString(x.GetComponentType()!, syntax);
+
+                return fastToString ?? syntax;
+            }
         }
 
         var headerParams = (parameters ?? Enumerable.Empty<SwaggerPathParameter>()).Where(x => x.@in == "header").ToList();
@@ -90,14 +99,14 @@ internal abstract class SwaggerPathBase
                     safeString = "\"\" + " + safeString;
                 }
 
-                //TODO: if enum
-                // switch
-                //{
-                //    enum.Value => "Value",
-                //    _ => null
-                //
-                //}
-
+                if (header.schema.@ref is not null)
+                {
+                    var fastToStringResult = componentSchemas.GenerateFastEnumToString(type, safeString);
+                    if (fastToStringResult is not null)
+                    {
+                        safeString = fastToStringResult;
+                    }
+                }
 
                 headersToAdd += $@"
         if ({header.name.AsSafeString()} != default)

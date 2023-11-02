@@ -1,10 +1,8 @@
-﻿using System.Text.Json.Serialization;
-
-namespace dotnet.openapi.generator;
+﻿namespace dotnet.openapi.generator;
 
 internal class SwaggerComponents
 {
-    public Dictionary<string, SwaggerSchema> schemas { get; set; } = default!;
+    public SwaggerComponentSchemas schemas { get; set; } = default!;
 
     public async Task Generate(string path, string @namespace, string modifier, string clientModifierValue, IEnumerable<string> usedComponents, bool treeShaking, string? jsonConstructorAttribute, string? jsonPolymorphicAttribute, string? jsonDerivedTypeAttribute, string? jsonPropertyNameAttribute, bool includeJsonSourceGenerators, bool supportRequiredProperties, CancellationToken token)
     {
@@ -22,7 +20,7 @@ internal class SwaggerComponents
 
         if (treeShaking)
         {
-            schemasToGenerate = schemasToGenerate.ToDictionary(x => x.Key.AsSafeString(), x => x.Value);
+            schemasToGenerate = new(schemasToGenerate.ToDictionary(x => x.Key.AsSafeString(), x => x.Value));
             ShakeTree(usedComponents, schemasToGenerate);
         }
 

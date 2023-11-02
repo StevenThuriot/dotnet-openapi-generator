@@ -154,12 +154,12 @@ internal class SwaggerSchema
         return "";
     }
 
-    public string? GetBody(string name, bool supportRequiredProperties, string? jsonPropertyNameAttribute, IReadOnlyDictionary<string, SwaggerSchema> schemas)
+    public string? GetBody(string name, bool supportRequiredProperties, string? jsonPropertyNameAttribute, SwaggerComponentSchemas schemas)
     {
         return @enum?.GetBody(name, FlaggedEnum, EnumNames) ?? properties?.GetBody(allOf, supportRequiredProperties, jsonPropertyNameAttribute, schemas, discriminator?.propertyName);
     }
 
-    public Task Generate(string path, string @namespace, string modifier, string name, string? jsonConstructorAttribute, string? jsonPolymorphicAttribute, string? jsonDerivedTypeAttribute, string? jsonPropertyNameAttribute, bool supportRequiredProperties, IReadOnlyDictionary<string, SwaggerSchema> schemas, CancellationToken token)
+    public Task Generate(string path, string @namespace, string modifier, string name, string? jsonConstructorAttribute, string? jsonPolymorphicAttribute, string? jsonDerivedTypeAttribute, string? jsonPropertyNameAttribute, bool supportRequiredProperties, SwaggerComponentSchemas schemas, CancellationToken token)
     {
         name = name.AsSafeString();
         var fileName = Path.Combine(path, name + ".cs");
