@@ -188,9 +188,11 @@ internal class SwaggerSchema
 [System.CodeDom.Compiler.GeneratedCode(""dotnet-openapi-generator"", ""{Constants.ProductVersion}"")]{attributes}
 {(@enum is null
     ? "[System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]" + Environment.NewLine
-    : FlaggedEnum is not null
+    : (FlaggedEnum is not null
         ? "[System.Flags]" + Environment.NewLine
-        : "")}{modifier} {GetDefinitionType(name, schemas.Values)} {name}{GetInheritance()}
+        : "")
+        + "[System.Text.Json.Serialization.JsonConverter(typeof("+name+@"EnumConverter))]
+")}{modifier} {GetDefinitionType(name, schemas.Values)} {name}{GetInheritance()}
 {{{GetCtor(name, jsonConstructorAttribute, supportRequiredProperties, schemas)}
 {GetBody(name, supportRequiredProperties, jsonPropertyNameAttribute, schemas, modifier)}
 }}

@@ -79,12 +79,12 @@ internal class SwaggerSchemaEnum : List<object>
             if (safeName.TrimStart('@') != name.Split(" = ")[0])
             {
                 Logger.Break();
-                Logger.LogWarning($"Enum \'{enumName}\' has a value that's not supported: \'{name}\' --> \'{safeName}\'.");
+                Logger.LogWarning($"Enum \'{enumName}\' has a value that's not supported by default in dotnet: \'{name}\' --> \'{safeName}\'.");
                 Logger.LogWarning("\tThis has been marked with an EnumMember attribute.");
-                Logger.LogWarning("\tPlease manually add the needed serialization support to your ClientOptions.");
+                Logger.LogWarning("\tSystem.Text.Json and Newtonsoft.Json support has been added out of the box.");
+                Logger.LogWarning("\tPlease manually add the needed serialization support to your ClientOptions when using any other libraries.");
                 Logger.Break();
-
-
+                
                 name = $@"[System.Runtime.Serialization.EnumMember(Value = ""{name}"")]{safeName}";
             }
             else
@@ -125,8 +125,27 @@ internal class SwaggerSchemaEnum : List<object>
         }
 
         AppendFastEnumHelpers(builder, enumName, modifier, fastEnumValues);
+        AppendConverter(builder, enumName, modifier);
 
         return builder.ToString().TrimEnd('\n', '\r', ',');
+    }
+
+    private void AppendConverter(StringBuilder builder, string enumName, string modifier)
+    {
+        builder.Append('}')
+            .AppendLine()
+            .AppendLine()
+            .Append(modifier).Append(" class ").Append(enumName).Append("EnumConverter : System.Text.Json.Serialization.JsonConverter<").Append(enumName).Append('>').AppendLine()
+            .AppendLine("{")
+            .Append("    public override ").Append(enumName).AppendLine(" Read(ref System.Text.Json.Utf8JsonReader reader, System.Type typeToConvert, System.Text.Json.JsonSerializerOptions options)")
+            .AppendLine("    {")
+            .Append("        return ").Append(enumName).AppendLine("FastEnum.FromString(reader.GetString());")
+            .AppendLine("    }")
+            .AppendLine()
+            .Append("    public override void Write(System.Text.Json.Utf8JsonWriter writer, ").Append(enumName).AppendLine(" value, System.Text.Json.JsonSerializerOptions options)")
+            .AppendLine("    {")
+            .Append("        writer.WriteStringValue(").Append(enumName).AppendLine("FastEnum.ToString(value));")
+            .AppendLine("    }");
     }
 
     private void AppendFastEnumHelpers(StringBuilder builder, string enumName, string modifier, IEnumerable<FastEnumValue> fastEnumValues)
@@ -145,10 +164,10 @@ internal class SwaggerSchemaEnum : List<object>
             builder.Append("         ").Append(enumName).Append('.').Append(item.Name).Append(" => \"").Append(item.Value).AppendLine("\",");
         }
 
-        builder.AppendLine("         _ => throw new System.ArgumentException(nameof(value))")
+        builder.AppendLine("         _ => throw new System.NotSupportedException(value + \" is not a supported Enum value\")")
                .AppendLine("     };")
                .AppendLine()
-               .Append("     public static ").Append(enumName).AppendLine(" FromString(string value) => value switch")
+               .Append("     public static ").Append(enumName).AppendLine(" FromString(string? value) => value switch")
                .AppendLine("     {");
 
 
@@ -157,7 +176,7 @@ internal class SwaggerSchemaEnum : List<object>
             builder.Append("         \"").Append(item.Value).Append("\" => ").Append(enumName).Append('.').Append(item.Name).Append(',').AppendLine();
         }
 
-        builder.AppendLine("         _ => throw new System.ArgumentException(nameof(value))")
+        builder.AppendLine("         _ => throw new System.NotSupportedException((value ?? \"NULL\") + \" is not a supported Enum value\")")
                .AppendLine("     };");
     }
 }
