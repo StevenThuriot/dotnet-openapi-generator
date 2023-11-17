@@ -52,16 +52,24 @@ internal class SwaggerComponents
 
 namespace {@namespace}.Clients;
 
-[System.Text.Json.Serialization.JsonSourceGenerationOptions(DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull, PropertyNamingPolicy = System.Text.Json.Serialization.JsonKnownNamingPolicy.CamelCase)]
+[System.Text.Json.Serialization.JsonSourceGenerationOptions(DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull, PropertyNamingPolicy = System.Text.Json.Serialization.JsonKnownNamingPolicy.CamelCase"
+#if NET8_0_OR_GREATER
++ ", UseStringEnumConverter = true, PropertyNameCaseInsensitive = true, NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString"
+#endif
++ @")]
 {string.Join(Environment.NewLine, attributes)}
 {clientModifierValue} sealed partial class {className}JsonSerializerContext : System.Text.Json.Serialization.JsonSerializerContext
-{{
+{{"
+#if !NET8_0_OR_GREATER
+        + $@"
     static {className}JsonSerializerContext()
     {{
         s_defaultOptions.PropertyNameCaseInsensitive = true;
         s_defaultOptions.NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString;
         s_defaultOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
-    }}
+    }}"
+#endif
+        + @"
 }}";
 
                 await File.WriteAllTextAsync(Path.Combine(path, "../Clients/__JsonSerializerContext.cs"), template, token);

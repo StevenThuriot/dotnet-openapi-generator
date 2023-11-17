@@ -154,9 +154,9 @@ internal class SwaggerSchema
         return "";
     }
 
-    public string? GetBody(string name, bool supportRequiredProperties, string? jsonPropertyNameAttribute, SwaggerComponentSchemas schemas)
+    public string? GetBody(string name, bool supportRequiredProperties, string? jsonPropertyNameAttribute, SwaggerComponentSchemas schemas, string modifier)
     {
-        return @enum?.GetBody(name, FlaggedEnum, EnumNames) ?? properties?.GetBody(allOf, supportRequiredProperties, jsonPropertyNameAttribute, schemas, discriminator?.propertyName);
+        return @enum?.GetBody(name, FlaggedEnum, EnumNames, modifier) ?? properties?.GetBody(allOf, supportRequiredProperties, jsonPropertyNameAttribute, schemas, discriminator?.propertyName);
     }
 
     public Task Generate(string path, string @namespace, string modifier, string name, string? jsonConstructorAttribute, string? jsonPolymorphicAttribute, string? jsonDerivedTypeAttribute, string? jsonPropertyNameAttribute, bool supportRequiredProperties, SwaggerComponentSchemas schemas, CancellationToken token)
@@ -192,7 +192,7 @@ internal class SwaggerSchema
         ? "[System.Flags]" + Environment.NewLine
         : "")}{modifier} {GetDefinitionType(name, schemas.Values)} {name}{GetInheritance()}
 {{{GetCtor(name, jsonConstructorAttribute, supportRequiredProperties, schemas)}
-{GetBody(name, supportRequiredProperties, jsonPropertyNameAttribute, schemas)}
+{GetBody(name, supportRequiredProperties, jsonPropertyNameAttribute, schemas, modifier)}
 }}
 ";
         return File.WriteAllTextAsync(fileName, template, token);

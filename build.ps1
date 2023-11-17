@@ -1,6 +1,6 @@
 cd dotnet-openapi-generator
 
-$versions = @("5.0", "6.0", "7.0")
+$versions = @("5.0", "6.0", "7.0", "8.0")
 $postfix = "-preview.14"
 
 foreach ($i in $versions) {

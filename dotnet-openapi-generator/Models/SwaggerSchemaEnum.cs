@@ -42,8 +42,11 @@ internal class SwaggerSchemaEnum : List<object>
         }
     }
 
-    public string GetBody(string enumName, SwaggerSchemaFlaggedEnum? flaggedEnum, List<string>? enumNames)
+    record struct FastEnumValue(string Name, string Value);
+    public string GetBody(string enumName, SwaggerSchemaFlaggedEnum? flaggedEnum, List<string>? enumNames, string modifier)
     {
+        List<FastEnumValue> fastEnumValues = new();
+
         HashSet<string> unique = new(Count);
 
         StringBuilder builder = new();
@@ -64,11 +67,6 @@ internal class SwaggerSchemaEnum : List<object>
             if (enumNames is not null)
             {
                 name = enumNames[i];
-
-                if (value is not string)
-                {
-                    name += " = " + value;
-                }
             }
             else
             {
@@ -76,8 +74,9 @@ internal class SwaggerSchemaEnum : List<object>
             }
 
             var safeName = name.AsSafeString().AsSafeCSharpName("@", "_");
+            fastEnumValues.Add(new(safeName, name));
 
-            if (safeName.TrimStart('@') != name)
+            if (safeName.TrimStart('@') != name.Split(" = ")[0])
             {
                 Logger.Break();
                 Logger.LogWarning($"Enum \'{enumName}\' has a value that's not supported: \'{name}\' --> \'{safeName}\'.");
@@ -85,11 +84,17 @@ internal class SwaggerSchemaEnum : List<object>
                 Logger.LogWarning("\tPlease manually add the needed serialization support to your ClientOptions.");
                 Logger.Break();
 
+
                 name = $@"[System.Runtime.Serialization.EnumMember(Value = ""{name}"")]{safeName}";
             }
             else
             {
                 name = safeName;
+            }
+
+            if (enumNames is not null && value is not string)
+            {
+                name += " = " + value;
             }
 
             if (!unique.Add(name))
@@ -119,6 +124,40 @@ internal class SwaggerSchemaEnum : List<object>
             }
         }
 
+        AppendFastEnumHelpers(builder, enumName, modifier, fastEnumValues);
+
         return builder.ToString().TrimEnd('\n', '\r', ',');
+    }
+
+    private void AppendFastEnumHelpers(StringBuilder builder, string enumName, string modifier, IEnumerable<FastEnumValue> fastEnumValues)
+    {
+        builder.Append('}')
+            .AppendLine()
+            .AppendLine();
+
+        builder.Append(modifier).Append(" static class ").Append(enumName).AppendLine("FastEnum")
+               .AppendLine("{")
+               .Append("     public static string ToString(").Append(enumName).AppendLine(" value) => value switch")
+               .AppendLine("     {");
+
+        foreach (var item in fastEnumValues)
+        {
+            builder.Append("         ").Append(enumName).Append('.').Append(item.Name).Append(" => \"").Append(item.Value).AppendLine("\",");
+        }
+
+        builder.AppendLine("         _ => throw new System.ArgumentException(nameof(value))")
+               .AppendLine("     };")
+               .AppendLine()
+               .Append("     public static ").Append(enumName).AppendLine(" FromString(string value) => value switch")
+               .AppendLine("     {");
+
+
+        foreach (var item in fastEnumValues)
+        {
+            builder.Append("         \"").Append(item.Value).Append("\" => ").Append(enumName).Append('.').Append(item.Name).Append(',').AppendLine();
+        }
+
+        builder.AppendLine("         _ => throw new System.ArgumentException(nameof(value))")
+               .AppendLine("     };");
     }
 }

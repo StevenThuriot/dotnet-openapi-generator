@@ -20,7 +20,7 @@
   -->
   
   <PropertyGroup Condition="'$(openapi-generator-version)' == ''">
-    <openapi-generator-version>7.0</openapi-generator-version>
+    <openapi-generator-version>8.0</openapi-generator-version>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(openapi-generator-version-string)' == ''">
