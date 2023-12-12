@@ -1,6 +1,4 @@
-﻿using System.Reflection.PortableExecutable;
-using System.Text;
-using System.Text.Json.Serialization;
+﻿using System.Text;
 
 namespace dotnet.openapi.generator;
 

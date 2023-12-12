@@ -7,10 +7,10 @@ internal class SwaggerSchema
     public SwaggerSchemaEnum? @enum { get; set; }
 
     [System.Text.Json.Serialization.JsonPropertyName("flagged-enum")]
-    public SwaggerSchemaFlaggedEnum? FlaggedEnum { get; set; }
+    public SwaggerSchemaFlaggedEnum? flaggedEnum { get; set; }
 
     [System.Text.Json.Serialization.JsonPropertyName("x-enumNames")]
-    public List<string>? EnumNames { get; set; }
+    public List<string>? enumNames { get; set; }
 
     public SwaggerSchemaProperties? properties { get; set; }
 
@@ -60,7 +60,7 @@ internal class SwaggerSchema
             return null;
         }
 
-        HashSet<(string key, SwaggerSchemaProperty value)> baseProperties = new();
+        HashSet<(string key, SwaggerSchemaProperty value)> baseProperties = [];
         HashSet<(string key, SwaggerSchemaProperty value)> requiredProperties = GetRequiredProperties();
 
         if (allOf is not null)
@@ -124,11 +124,11 @@ internal class SwaggerSchema
 ";
     }
 
-    private HashSet<(string key, SwaggerSchemaProperty value)> GetRequiredProperties() => IterateProperties()?.Where(x => x.Value.required.GetValueOrDefault() || !x.Value.nullable).ToHashSet() ?? new(0);
+    private HashSet<(string key, SwaggerSchemaProperty value)> GetRequiredProperties() => IterateProperties()?.Where(x => !x.Value.nullable /*|| x.Value.required.GetValueOrDefault()*/).ToHashSet() ?? new(0);
 
     private string GetInheritance()
     {
-        HashSet<string> toImplement = new();
+        HashSet<string> toImplement = [];
 
         if (allOf is not null)
         {
@@ -156,7 +156,7 @@ internal class SwaggerSchema
 
     public string? GetBody(string name, bool supportRequiredProperties, string? jsonPropertyNameAttribute, SwaggerComponentSchemas schemas, string modifier)
     {
-        return @enum?.GetBody(name, FlaggedEnum, EnumNames, modifier) ?? properties?.GetBody(allOf, supportRequiredProperties, jsonPropertyNameAttribute, schemas, discriminator?.propertyName);
+        return @enum?.GetBody(name, flaggedEnum, enumNames, modifier) ?? properties?.GetBody(allOf, supportRequiredProperties, jsonPropertyNameAttribute, schemas, discriminator?.propertyName);
     }
 
     public Task Generate(string path, string @namespace, string modifier, string name, string? jsonConstructorAttribute, string? jsonPolymorphicAttribute, string? jsonDerivedTypeAttribute, string? jsonPropertyNameAttribute, bool supportRequiredProperties, SwaggerComponentSchemas schemas, CancellationToken token)
@@ -188,7 +188,7 @@ internal class SwaggerSchema
 [System.CodeDom.Compiler.GeneratedCode(""dotnet-openapi-generator"", ""{Constants.ProductVersion}"")]{attributes}
 {(@enum is null
     ? "[System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]" + Environment.NewLine
-    : (FlaggedEnum is not null
+    : (flaggedEnum is not null
         ? "[System.Flags]" + Environment.NewLine
         : "")
         + "[System.Text.Json.Serialization.JsonConverter(typeof("+name+@"EnumConverter))]

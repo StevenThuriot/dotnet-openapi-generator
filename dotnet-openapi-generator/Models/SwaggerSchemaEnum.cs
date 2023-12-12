@@ -45,7 +45,7 @@ internal class SwaggerSchemaEnum : List<object>
     record struct FastEnumValue(string Name, string Value);
     public string GetBody(string enumName, SwaggerSchemaFlaggedEnum? flaggedEnum, List<string>? enumNames, string modifier)
     {
-        List<FastEnumValue> fastEnumValues = new();
+        List<FastEnumValue> fastEnumValues = [];
 
         HashSet<string> unique = new(Count);
 

@@ -56,7 +56,7 @@ namespace {@namespace}.Clients;
 #if NET8_0_OR_GREATER
 + ", UseStringEnumConverter = true, PropertyNameCaseInsensitive = true, NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString"
 #endif
-+ @")]
++ $@")]
 {string.Join(Environment.NewLine, attributes)}
 {clientModifierValue} sealed partial class {className}JsonSerializerContext : System.Text.Json.Serialization.JsonSerializerContext
 {{"
@@ -69,7 +69,7 @@ namespace {@namespace}.Clients;
         s_defaultOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
     }}"
 #endif
-        + @"
+        + $@"
 }}";
 
                 await File.WriteAllTextAsync(Path.Combine(path, "../Clients/__JsonSerializerContext.cs"), template, token);

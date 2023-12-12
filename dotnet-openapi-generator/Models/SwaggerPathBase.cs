@@ -144,7 +144,7 @@ internal abstract class SwaggerPathBase
         if (requestBody?.content?.multipartformdata is not null)
         {
             var contents = "";
-            List<string> contentNames = new();
+            List<string> contentNames = [];
 
             foreach (var x in requestBody.content.multipartformdata.schema.IterateProperties().Select(x => x.Value)
                                             .Select(x => x.ResolveType()!)

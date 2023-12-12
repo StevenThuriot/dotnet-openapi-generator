@@ -55,10 +55,10 @@ internal class SwaggerPaths : Dictionary<string, SwaggerPath>
                     }
                     else
                     {
-                        clients[safeTag] = new()
-                        {
+                        clients[safeTag] =
+                        [
                             (item.Key, member)
-                        };
+                        ];
                     }
                 }
             }
@@ -342,7 +342,7 @@ namespace {@namespace};
 
     private static async Task<IReadOnlyCollection<string>> GenerateClients(string path, string @namespace, string modifier, bool excludeObsolete, bool includeInterfaces, string clientModifier, Dictionary<string, List<(string apiPath, SwaggerPathBase path)>> clients, SwaggerComponentSchemas componentSchemas, CancellationToken token)
     {
-        HashSet<string> usedComponents = new();
+        HashSet<string> usedComponents = [];
 
         Logger.LogInformational("Generating Clients");
 
@@ -397,7 +397,7 @@ namespace {@namespace}.Clients;
             string GetBody()
             {
                 StringBuilder builder = new();
-                HashSet<string> methodNames = new();
+                HashSet<string> methodNames = [];
 
                 foreach (var item in client.Value)
                 {
@@ -417,7 +417,7 @@ namespace {@namespace}.Clients;
             string GetBodySignatures()
             {
                 StringBuilder builder = new();
-                HashSet<string> methodNames = new();
+                HashSet<string> methodNames = [];
 
                 foreach (var item in client.Value)
                 {
@@ -486,7 +486,7 @@ namespace {@namespace}.Clients;
         return string.Concat(""?"", System.MemoryExtensions.AsSpan(_result, 1));
     }";
 
-        const string withStringBuilders = @"private System.Text.StringBuilder _builder;
+        const string withStringBuilders = @"private System.Text.StringBuilder? _builder;
     public __QueryBuilder()
     {
         _builder = __StringBuilderPool.Acquire();
@@ -496,7 +496,7 @@ namespace {@namespace}.Clients;
     {
         if (!string.IsNullOrEmpty(value))
         {
-            _ = _builder.Append('&').Append(valueExpression).Append('=').Append(value);
+            _ = _builder!.Append('&').Append(valueExpression).Append('=').Append(value);
         }
     }
 
@@ -504,7 +504,7 @@ namespace {@namespace}.Clients;
     {
         try
         {
-            if (_builder.Length > 0)
+            if (_builder!.Length > 0)
             {
                 _builder[0] = '?';
             }
@@ -513,8 +513,8 @@ namespace {@namespace}.Clients;
         }
         finally
         {
-            __StringBuilderPool.Release(_builder);
-            _builder = null!; //Just making sure that we don't share an instance, worst case.
+            __StringBuilderPool.Release(_builder!);
+            _builder = null; //Just making sure that we don't share an instance, worst case.
         }
     }";
 
@@ -636,17 +636,24 @@ internal static class __StringBuilderPool
     private static async Task GenerateClientOptions(string path, string @namespace, string modifier, bool includeOAuth, bool includeJsonSourceGenerators, CancellationToken token)
     {
         Logger.LogInformational("Generating ClientOptions");
-        var staticCtor = "";
+        var staticCtor = $@"
+        s_defaultOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());";
+
         if (includeJsonSourceGenerators)
         {
+#if NET8_0_OR_GREATER
             staticCtor = $@"
 
+        s_defaultOptions.TypeInfoResolverChain.Insert(0, {@namespace.AsSafeString(replaceDots: true, replacement: "")}JsonSerializerContext.Default);";
+#else
+            staticCtor += $@"
+
         s_defaultOptions.TypeInfoResolver = System.Text.Json.Serialization.Metadata.JsonTypeInfoResolver.Combine({@namespace.AsSafeString(replaceDots: true, replacement: "")}JsonSerializerContext.Default, new System.Text.Json.Serialization.Metadata.DefaultJsonTypeInfoResolver());";
+#endif
         }
 
-#pragma warning disable CS0162 // Unreachable code detected
         string deserialize, asyncDeSerializeContent;
-        if (Constants.GeneratingNetStandard)
+#if GENERATING_NETSTANDARD
         {
             asyncDeSerializeContent = "async ";
             deserialize = @"
@@ -655,12 +662,12 @@ internal static class __StringBuilderPool
         return await System.Text.Json.JsonSerializer.DeserializeAsync<T>(contentStream, _options, token);
     }";
         }
-        else
+#else
         {
             asyncDeSerializeContent = "";
             deserialize = " => System.Net.Http.Json.HttpContentJsonExtensions.ReadFromJsonAsync<T>(response.Content, _options, token);";
         }
-#pragma warning restore CS0162 // Unreachable code detected
+#endif
 
         await File.WriteAllTextAsync(Path.Combine(path, "__ClientOptions.cs"), Constants.Header + $@"namespace {@namespace}.Clients;
 
@@ -676,8 +683,7 @@ internal static class __StringBuilderPool
         s_defaultOptions.PropertyNameCaseInsensitive = true;
         s_defaultOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
         s_defaultOptions.NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString;
-        s_defaultOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
-        s_defaultOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());{staticCtor}
+        s_defaultOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;{staticCtor}
     }}
     {(includeOAuth ? @"
     private readonly ITokenRequestClient _tokenRequestClient;

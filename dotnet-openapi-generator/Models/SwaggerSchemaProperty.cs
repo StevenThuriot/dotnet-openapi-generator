@@ -1,5 +1,4 @@
 ﻿using System.Text;
-using System.Text.Json;
 
 namespace dotnet.openapi.generator;
 
@@ -11,7 +10,7 @@ internal class SwaggerSchemaProperty
     public string? format { get; set; }
     public object? @default { get; set; }
     public bool nullable { get; set; }
-    public bool? required { get; set; }
+    //public bool? required { get; set; }
     public SwaggerSchemaPropertyAdditionalProperties? additionalProperties { get; set; }
     public System.Text.Json.JsonElement? items { get; set; }
 
@@ -30,7 +29,7 @@ internal class SwaggerSchemaProperty
 
         builder.Append("public ");
 
-        if (supportRequiredProperties && (!nullable || required.GetValueOrDefault()))
+        if (supportRequiredProperties && (!nullable /*|| required.GetValueOrDefault()*/))
         {
             builder.Append("required ");
         }

@@ -29,7 +29,7 @@ internal class SwaggerComponentSchemas : Dictionary<string, SwaggerSchema>
         builder.AppendLine(" switch")
                .AppendLine("\t\t{");
 
-        foreach (var (name, safeName) in schema.@enum.IterateValues(schema.FlaggedEnum, schema.EnumNames))
+        foreach (var (name, safeName) in schema.@enum.IterateValues(schema.flaggedEnum, schema.enumNames))
         {
             builder.Append("\t\t\t")
                    .Append(type)

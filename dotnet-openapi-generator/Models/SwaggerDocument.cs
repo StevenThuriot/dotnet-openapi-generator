@@ -74,14 +74,13 @@ internal class SwaggerDocument
         }
 
         string targetframework = "";
-#pragma warning disable CS0162 // Unreachable code detected
-        if (Constants.GeneratingNetStandard)
+#if GENERATING_NETSTANDARD
         {
             additionalIncludes += $@"
     <PackageReference Include=""System.Text.Json"" Version=""[6.*,)"" />";
             targetframework = "standard";
         }
-#pragma warning restore CS0162 // Unreachable code detected
+#endif
 
         return File.WriteAllTextAsync(file, @$"<Project Sdk=""Microsoft.NET.Sdk"">
 
@@ -146,7 +145,7 @@ internal class __TokenCache : ITokenCache
             }
         }
 
-        return File.WriteAllTextAsync(file, Constants.Header + @$"namespace {options.Namespace}.Clients;{additionalHelpers}
+        return File.WriteAllTextAsync(file, Constants.Header + $@"namespace {options.Namespace}.Clients;{additionalHelpers}
 
 [System.CodeDom.Compiler.GeneratedCode(""dotnet-openapi-generator"", ""{Constants.ProductVersion}"")]
 [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]

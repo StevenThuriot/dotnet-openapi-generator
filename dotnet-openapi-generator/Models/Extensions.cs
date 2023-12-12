@@ -76,7 +76,7 @@ internal static class Extensions
 
     public static IEnumerable<string> AsUniques(this IEnumerable<string> values)
     {
-        HashSet<string> returnedValues = new();
+        HashSet<string> returnedValues = [];
 
         foreach (var value in values)
         {
@@ -94,7 +94,7 @@ internal static class Extensions
 
     public static IEnumerable<(T item, string name)> AsUniques<T>(this IEnumerable<T> values, Func<T, string> get)
     {
-        HashSet<string> returnedValues = new();
+        HashSet<string> returnedValues = [];
 
         foreach (var value in values)
         {

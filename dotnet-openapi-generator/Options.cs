@@ -83,8 +83,7 @@ public class Options
         Logger.Verbose = Verbose;
 
         Directory ??= System.IO.Directory.GetCurrentDirectory();
-
-        if (!Path.IsPathRooted(Directory))
+        if (!Path.IsPathRooted(Directory.TrimStart('\\', '/')))
         {
             Directory = new DirectoryInfo(Path.Combine(System.IO.Directory.GetCurrentDirectory(), Directory)).FullName;
             Logger.LogVerbose("Path isn't rooted, created rooted path: " + Directory);
@@ -95,7 +94,7 @@ public class Options
             DirectoryInfo directoryInfo = new(Directory);
             if (directoryInfo.Exists)
             {
-                Logger.LogVerbose("Cleaning up directory");
+                Logger.LogVerbose("Cleaning up directory " + directoryInfo.FullName);
                 directoryInfo.Delete(true);
                 directoryInfo.Create();
             }
@@ -130,19 +129,58 @@ public class Options
 #endif
     }
 
-    private static Task<string> GetDocument(string documentLocation)
+    private static async Task<string> GetDocument(string documentLocation)
     {
+        string? result = null;
         if (documentLocation.StartsWith("http", StringComparison.OrdinalIgnoreCase))
         {
-            return GetHttpDocument(documentLocation);
+            result = await GetHttpDocument(documentLocation);
         }
         else if (File.Exists(documentLocation))
         {
-            return GetLocalDocument(documentLocation);
+            result = await GetLocalDocument(documentLocation);
         }
 
-        Logger.LogError("Could not resolve document " + documentLocation);
-        return Task.FromException<string>(new("Error resolving document"));
+        if (result is null)
+        {
+            Logger.LogError("Could not resolve document " + documentLocation);
+            throw new ApplicationException("Error resolving document");
+        }
+
+        if (documentLocation.EndsWith(".yml", StringComparison.OrdinalIgnoreCase) ||
+            documentLocation.EndsWith(".yaml", StringComparison.OrdinalIgnoreCase) ||
+            result.SkipWhile(char.IsWhiteSpace).FirstOrDefault() != '{')
+        {
+            try
+            {
+                result = ConvertYamlToJson(result);
+            }
+            catch
+            {
+                Logger.LogError("Assumed document was yaml but could not convert it. Continuing as normal.");
+            }
+        }
+
+        return result;
+    }
+
+    private static string ConvertYamlToJson(string result)
+    {
+        var deserializer = new YamlDotNet.Serialization.DeserializerBuilder()
+                                         .WithAttemptingUnquotedStringTypeDeserialization()
+                                         .Build();
+
+        var yamlObject = deserializer.Deserialize(result);
+
+        var serializer = new YamlDotNet.Serialization.SerializerBuilder()
+                                       .JsonCompatible()
+                                       .Build();
+
+        var json = serializer.Serialize(yamlObject);
+
+        Logger.LogVerbose("Converted document to json");
+
+        return json;
     }
 
     private static Task<string> GetLocalDocument(string documentLocation)
