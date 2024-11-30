@@ -49,7 +49,7 @@ internal abstract class SwaggerPathBase
             }
         }
 
-        var methodParameters = (parameters ?? Enumerable.Empty<SwaggerPathParameter>())
+        var methodParameters = (parameters ?? [])
                                                     .OrderBy(x => x.required ? 0 : 1)
                                                     .ThenBy(x => x.@in == "path" ? 0 : 1)
                                                     .ToList();
@@ -61,7 +61,7 @@ internal abstract class SwaggerPathBase
             methodParameterBodies += ", ";
         }
 
-        var queryParams = (parameters ?? Enumerable.Empty<SwaggerPathParameter>()).Where(x => x.@in == "query").ToList();
+        var queryParams = (parameters ?? []).Where(x => x.@in == "query").ToList();
 
         var queryContent = "";
         if (queryParams.Count > 0)
@@ -82,7 +82,7 @@ internal abstract class SwaggerPathBase
             }
         }
 
-        var headerParams = (parameters ?? Enumerable.Empty<SwaggerPathParameter>()).Where(x => x.@in == "header").ToList();
+        var headerParams = (parameters ?? []).Where(x => x.@in == "header").ToList();
 
         string headersToAdd = "";
         if (headerParams.Count > 0)
@@ -107,12 +107,14 @@ internal abstract class SwaggerPathBase
                     safeString = fastToString;
                 }
 
-                headersToAdd += $@"
-        if ({header.name.AsSafeString()} != default)
-        {{
-            __my_request.Headers.Add(""{header.name}"", {safeString});
-        }}
-";
+                headersToAdd += $$"""
+
+        if ({{header.name.AsSafeString()}} != default)
+        {
+            __my_request.Headers.Add("{{header.name}}", {{safeString}});
+        }
+
+""";
             }
         }
 
@@ -152,16 +154,18 @@ internal abstract class SwaggerPathBase
                                             .AsUniques(x => "@" + x[0..1].ToLowerInvariant() + x[1..]))
             {
                 var paramName = x.name;
-                var paramContentName = string.Concat("__", paramName.AsSpan(1));
+                var paramContentName = "__" + paramName.AsSpan(1).ToString();
                 contentNames.Add(paramContentName);
 
                 if (x.item == typeof(Stream).FullName)
                 {
-                    contents += $@"
+                    contents += $"""
+
         using System.Net.Http.StreamContent {paramContentName} = new({paramName});
-        {paramContentName}.Headers.Add(""Content-Disposition"", ""form-data; name=\""formFile\"""");
-        {paramContentName}.Headers.Add(""Content-Type"", System.Net.Mime.MediaTypeNames.Text.Plain);
-";
+        {paramContentName}.Headers.Add("Content-Disposition", "form-data; name=\"formFile\"");
+        {paramContentName}.Headers.Add("Content-Type", System.Net.Mime.MediaTypeNames.Text.Plain);
+
+""";
                 }
                 else if (paramName.StartsWith("@system_IO_Stream"))
                 {
@@ -177,15 +181,17 @@ internal abstract class SwaggerPathBase
                 }
             }
 
-            clientCall = $@"        {queryContent}using System.Net.Http.HttpRequestMessage __my_request = new(System.Net.Http.HttpMethod.{operation}, $""{apiPath}"");
-        {contents}
+            clientCall = $$"""
+        {{queryContent}}using System.Net.Http.HttpRequestMessage __my_request = new(System.Net.Http.HttpMethod.{{operation}}, $"{{apiPath}}");
+        {{contents}}
         __my_request.Content = new System.Net.Http.MultipartFormDataContent
-        {{
-            {string.Join("," + Environment.NewLine + "            ", contentNames)}
-        }};{headersToAdd}
+        {
+            {{string.Join("," + Environment.NewLine + "            ", contentNames)}}
+        };{{headersToAdd}}
 
         using var __my_intercepted_request = await __my_options.InterceptRequest(__my_request, token);
-        return await __my_http_client.SendAsync(__my_intercepted_request, token);";
+        return await __my_http_client.SendAsync(__my_intercepted_request, token);
+""";
         }
         else
         {

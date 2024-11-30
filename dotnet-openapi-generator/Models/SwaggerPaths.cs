@@ -21,7 +21,7 @@ internal class SwaggerPaths : Dictionary<string, SwaggerPath>
         if (clients.Count == 0)
         {
             Logger.LogWarning("No clients found to generate");
-            return Enumerable.Empty<string>();
+            return [];
         }
 
         await GenerateClientOptions(path, @namespace, modifier, oAuthType is not OAuthType.None, includeJsonSourceGenerators, token);
@@ -71,11 +71,11 @@ internal class SwaggerPaths : Dictionary<string, SwaggerPath>
     {
         Logger.LogInformational("Generating Registrations");
 
-        var clientNames = clients.OrderBy(x => x)
+        var clientNames = clients.Order()
                                  .Select(x => $"        public const string {x} = \"{@namespace.AsSafeString(replaceDots: true, replacement: "")}{x}Client\";")
                                  .Aggregate((current, next) => current + Environment.NewLine + next);
 
-        var addHttpClientRegistrations = clients.OrderBy(x => x)
+        var addHttpClientRegistrations = clients.Order()
                                                 .Select(x => $"        Register<{GetClientGeneric(x)}>(__ClientNames.{x});")
                                                 .Aggregate((current, next) => current + Environment.NewLine + next);
 
@@ -97,10 +97,12 @@ internal class SwaggerPaths : Dictionary<string, SwaggerPath>
 
         if (oAuthType is not OAuthType.None)
         {
-            clientNames += $@"
+            clientNames += $"""
 
-        public const string TokenRequestClient = ""{@namespace.AsSafeString(replaceDots: true, replacement: "")}TokenRequestClient"";
-        public const string DiscoveryCache = ""{@namespace.AsSafeString(replaceDots: true, replacement: "")}DiscoveryCache"";";
+
+        public const string TokenRequestClient = "{@namespace.AsSafeString(replaceDots: true, replacement: "")}TokenRequestClient";
+        public const string DiscoveryCache = "{@namespace.AsSafeString(replaceDots: true, replacement: "")}DiscoveryCache";
+""";
 
             additionalRegistrations = $@"
 
@@ -139,7 +141,8 @@ internal class SwaggerPaths : Dictionary<string, SwaggerPath>
             return new __{@namespace.AsSafeString(replaceDots: true, replacement: "")}DiscoveryCache(authorityUrl, factory);
         }});";
 
-            registrationClassAdditionals += @"
+            registrationClassAdditionals += """
+
 
     public ApiRegistration(TokenOptions tokenOptions)
     {
@@ -165,10 +168,11 @@ internal class SwaggerPaths : Dictionary<string, SwaggerPath>
             _tokenRequestClientType = value ?? throw new System.ArgumentNullException(nameof(TokenRequestClientType));
             if (!_tokenRequestClientType.IsAssignableTo(typeof(ITokenRequestClient)))
             {
-                throw new System.NotSupportedException(""TokenRequestClientType must inherit ITokenRequestClient"");
+                throw new System.NotSupportedException("TokenRequestClientType must inherit ITokenRequestClient");
             }
         }
-    }";
+    }
+""";
 
             singletonClientOptions = false;
 
@@ -197,7 +201,8 @@ internal class SwaggerPaths : Dictionary<string, SwaggerPath>
 
         services.AddMemoryCache();";
 
-                    registrationClassAdditionals += @"
+                    registrationClassAdditionals += """
+
 
     public System.Func<System.IServiceProvider, ITokenCache>? TokenCacheFactory { get; set; }
 
@@ -212,132 +217,135 @@ internal class SwaggerPaths : Dictionary<string, SwaggerPath>
             _tokenCacheType = value ?? throw new System.ArgumentNullException(nameof(TokenCacheType));
             if (!_tokenCacheType.IsAssignableTo(typeof(ITokenCache)))
             {
-                throw new System.NotSupportedException(""TokenCacheType must inherit ITokenCache"");
+                throw new System.NotSupportedException("TokenCacheType must inherit ITokenCache");
             }
         }
-    }";
+    }
+""";
                 }
             }
         }
 
-        await File.WriteAllTextAsync(Path.Combine(path, "..", "Registrations.cs"), Constants.Header + $@"using Microsoft.Extensions.DependencyInjection;
+        await File.WriteAllTextAsync(Path.Combine(path, "..", "Registrations.cs"), Constants.Header + $$"""
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using {@namespace}.Clients;
+using {{@namespace}}.Clients;
 
-namespace {@namespace};
+namespace {{@namespace}};
 
-[System.CodeDom.Compiler.GeneratedCode(""dotnet-openapi-generator"", ""{Constants.ProductVersion}"")]
+[System.CodeDom.Compiler.GeneratedCode("dotnet-openapi-generator", "{{Constants.ProductVersion}}")]
 [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-{modifier} sealed class ApiRegistration
-{{
-    public System.Func<System.IServiceProvider, ClientOptions>? OptionsFactory {{ get; set; }}
+{{modifier}} sealed class ApiRegistration
+{
+    public System.Func<System.IServiceProvider, ClientOptions>? OptionsFactory { get; set; }
 
-    public ClientOptions? Options {{ get; set; }}
+    public ClientOptions? Options { get; set; }
 
     private System.Type _optionType = typeof(ClientOptions);
     public System.Type OptionType
-    {{
+    {
         get => _optionType;
         set
-        {{
+        {
             _optionType = value ?? throw new System.ArgumentNullException(nameof(OptionType));
             if (!typeof(ClientOptions).IsAssignableFrom(_optionType))
-            {{
-                throw new System.NotSupportedException(""OptionType must inherit ClientOptions"");
-            }}
-        }}
-    }}
+            {
+                throw new System.NotSupportedException("OptionType must inherit ClientOptions");
+            }
+        }
+    }
 
     private System.Action<System.IServiceProvider, System.Net.Http.HttpClient>? _configureClientWithServiceProvider;
     public System.Action<System.IServiceProvider, System.Net.Http.HttpClient>? ConfigureClientWithServiceProvider
-    {{
+    {
         get => _configureClientWithServiceProvider;
         set
-        {{
+        {
             if (value is not null && _configureClient is not null)
-            {{
-                throw new System.NotSupportedException(""Can't set both ConfigureClient and ConfigureClientWithServiceProvider at the same time. Pick one!"");
-            }}
+            {
+                throw new System.NotSupportedException("Can't set both ConfigureClient and ConfigureClientWithServiceProvider at the same time. Pick one!");
+            }
 
             _configureClientWithServiceProvider = value;
-        }}
-    }}
+        }
+    }
 
     public System.Action<System.Net.Http.HttpClient>? _configureClient;
     public System.Action<System.Net.Http.HttpClient>? ConfigureClient
-    {{
+    {
         get => _configureClient;
         set
-        {{
+        {
             if (value is not null && _configureClientWithServiceProvider is not null)
-            {{
-                throw new System.NotSupportedException(""Can't set both ConfigureClient and ConfigureClientWithServiceProvider at the same time. Pick one!"");
-            }}
+            {
+                throw new System.NotSupportedException("Can't set both ConfigureClient and ConfigureClientWithServiceProvider at the same time. Pick one!");
+            }
 
             _configureClient = value;
-        }}
-    }}
+        }
+    }
 
-    public System.Action<IHttpClientBuilder>? ConfigureClientBuilder {{ get; set; }}{registrationClassAdditionals}
-}}
+    public System.Action<IHttpClientBuilder>? ConfigureClientBuilder { get; set; }{{registrationClassAdditionals}}
+}
 
 
 
-[System.CodeDom.Compiler.GeneratedCode(""dotnet-openapi-generator"", ""{Constants.ProductVersion}"")]
+[System.CodeDom.Compiler.GeneratedCode("dotnet-openapi-generator", "{{Constants.ProductVersion}}")]
 [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-{modifier} static class Registrations
-{{
+{{modifier}} static class Registrations
+{
     public static class __ClientNames
-    {{
-{clientNames}
-    }}
+    {
+{{clientNames}}
+    }
 
     public static IServiceCollection RegisterApiClients(this IServiceCollection services, ApiRegistration registration)
-    {{
+    {
         if (registration.OptionsFactory is not null)
-        {{
+        {
             services.TryAddScoped<ClientOptions>(registration.OptionsFactory);
-        }}
+        }
         else if (registration.Options is not null)
-        {{
+        {
             services.TryAddSingleton(registration.Options);
-        }}{(singletonClientOptions ? @"
+        }{{(singletonClientOptions ? @"
         else if (registration.OptionType == typeof(ClientOptions))
         {
             services.TryAddSingleton<ClientOptions>();
-        }" : "")}
+        }" : "")}}
         else
-        {{
+        {
             services.TryAddScoped(typeof(ClientOptions), registration.OptionType);
-        }}
+        }
 
-{addHttpClientRegistrations}{additionalRegistrations}
+{{addHttpClientRegistrations}}{{additionalRegistrations}}
 
         return services;
 
-        void Register<{(includeInterfaces ? "TClient, " : "")}TImplementation>(string httpClientName){(includeInterfaces ? @"
-            where TClient : class" : "")}
-            where TImplementation : class{(includeInterfaces ? ", TClient" : "")}
-        {{
-            var apiClientHttpBuilder = services.AddHttpClient<{(includeInterfaces ? "TClient, " : "")}TImplementation>(httpClientName);
+        void Register<{{(includeInterfaces ? "TClient, " : "")}}TImplementation>(string httpClientName){{(includeInterfaces ? @"
+            where TClient : class" : "")}}
+            where TImplementation : class{{(includeInterfaces ? ", TClient" : "")}}
+        {
+            var apiClientHttpBuilder = services.AddHttpClient<{{(includeInterfaces ? "TClient, " : "")}}TImplementation>(httpClientName);
 
             if (registration.ConfigureClientWithServiceProvider is not null)
-            {{
+            {
                 apiClientHttpBuilder.ConfigureHttpClient(registration.ConfigureClientWithServiceProvider);
-            }}
+            }
             else if (registration.ConfigureClient is not null)
-            {{
+            {
                 apiClientHttpBuilder.ConfigureHttpClient(registration.ConfigureClient);
-            }}
+            }
 
             if (registration.ConfigureClientBuilder is not null)
-            {{
+            {
                 registration.ConfigureClientBuilder(apiClientHttpBuilder);
-            }}
-        }}
-    }}
-}}
-", token);
+            }
+        }
+    }
+}
+
+""", token);
     }
 
     private static async Task<IReadOnlyCollection<string>> GenerateClients(string path, string @namespace, string modifier, bool excludeObsolete, bool includeInterfaces, string clientModifier, Dictionary<string, List<(string apiPath, SwaggerPathBase path)>> clients, SwaggerComponentSchemas componentSchemas, CancellationToken token)
@@ -363,33 +371,37 @@ namespace {@namespace};
                 continue;
             }
 
-            var template = Constants.Header + $@"using {@namespace}.Models;
+            var template = Constants.Header + $$"""
+using {{@namespace}}.Models;
 
-namespace {@namespace}.Clients;
+namespace {{@namespace}}.Clients;
 
-[System.CodeDom.Compiler.GeneratedCode(""dotnet-openapi-generator"", ""{Constants.ProductVersion}"")]
+[System.CodeDom.Compiler.GeneratedCode("dotnet-openapi-generator", "{{Constants.ProductVersion}}")]
 [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-{clientModifier} sealed class {name}{(includeInterfaces ? " : I" + name : "")}
-{{
+{{clientModifier}} sealed class {{name}}{{(includeInterfaces ? " : I" + name : "")}}
+{
     private readonly System.Net.Http.HttpClient __my_http_client;
     private readonly ClientOptions __my_options;
 
-    public {name}(System.Net.Http.HttpClient client, ClientOptions options)
-    {{
+    public {{name}}(System.Net.Http.HttpClient client, ClientOptions options)
+    {
         __my_http_client = client;
         __my_options = options;
-    }}
-{body}
-}}
-";
+    }
+{{body}}
+}
+
+""";
             if (includeInterfaces)
             {
-                template += @$"
-[System.CodeDom.Compiler.GeneratedCode(""dotnet-openapi-generator"", ""{Constants.ProductVersion}"")]
-{modifier} interface I{name}
-{{{GetBodySignatures()}
-}}
-";
+                template += $$"""
+
+[System.CodeDom.Compiler.GeneratedCode("dotnet-openapi-generator", "{{Constants.ProductVersion}}")]
+{{modifier}} interface I{{name}}
+{{{GetBodySignatures()}}
+}
+
+""";
             }
 
             await File.WriteAllTextAsync(fileName, template, token);
@@ -466,7 +478,8 @@ namespace {@namespace}.Clients;
     private static async Task GenerateQueryBuilder(string path, string @namespace, int stringBuilderPoolSize, CancellationToken token)
     {
         Logger.LogInformational("Generating QueryBuilder");
-        const string withoutStringBuilders = @"private string _result = """";
+        const string withoutStringBuilders = """
+private string _result = "";
 
     public void AddParameter(string? value, string valueExpression)
     {
@@ -480,11 +493,12 @@ namespace {@namespace}.Clients;
     {
         if (_result.Length == 0)
         {
-            return """";
+            return "";
         }
 
-        return string.Concat(""?"", System.MemoryExtensions.AsSpan(_result, 1));
-    }";
+        return string.Concat("?", System.MemoryExtensions.AsSpan(_result, 1));
+    }
+""";
 
         const string withStringBuilders = @"private System.Text.StringBuilder? _builder;
     public __QueryBuilder()
@@ -523,18 +537,19 @@ namespace {@namespace}.Clients;
             await GenerateStringBuilderPool(path, @namespace, stringBuilderPoolSize, token);
         }
 
-        await File.WriteAllTextAsync(Path.Combine(path, "__QueryBuilder.cs"), Constants.Header + $@"namespace {@namespace}.Clients;
+        await File.WriteAllTextAsync(Path.Combine(path, "__QueryBuilder.cs"), Constants.Header + $$"""
+namespace {{@namespace}}.Clients;
 
-[System.CodeDom.Compiler.GeneratedCode(""dotnet-openapi-generator"", ""{Constants.ProductVersion}"")]
+[System.CodeDom.Compiler.GeneratedCode("dotnet-openapi-generator", "{{Constants.ProductVersion}}")]
 [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 internal struct __QueryBuilder
-{{
-    {(stringBuilderPoolSize > 0 ? withStringBuilders : withoutStringBuilders)}
+{
+    {{(stringBuilderPoolSize > 0 ? withStringBuilders : withoutStringBuilders)}}
 
     public void AddParameter<T>(T? value, string valueExpression)
-    {{
+    {
         switch (value)
-        {{
+        {
             case null:
                 break;
 
@@ -542,7 +557,7 @@ internal struct __QueryBuilder
                 AddParameter(stringValue, valueExpression);
                 break;
 
-            case {@namespace}.Models.__ICanIterate valueWithParameters:
+            case {{@namespace}}.Models.__ICanIterate valueWithParameters:
                 AddParameters(valueWithParameters);
                 break;
 
@@ -551,92 +566,95 @@ internal struct __QueryBuilder
                 break;
 
             case System.DateTime dateTime:
-                AddParameter(dateTime.ToString(""o"", System.Globalization.CultureInfo.InvariantCulture), valueExpression);
+                AddParameter(dateTime.ToString("o", System.Globalization.CultureInfo.InvariantCulture), valueExpression);
                 break;
 
             default:
                 AddParameter(value?.ToString(), valueExpression);
                 break;
-        }}
-    }}
+        }
+    }
 
     public void AddParameter<T>(System.Collections.Generic.List<T>? values, string valueExpression)
-    {{
+    {
         if (values is null)
-        {{
+        {
             return;
-        }}
+        }
 
         AddParameter(System.Linq.Enumerable.AsEnumerable(values), valueExpression);
-    }}
+    }
 
     public void AddParameter<T>(System.Collections.Generic.IEnumerable<T?>? values, string valueExpression)
-    {{
+    {
         if (values is null)
-        {{
+        {
             return;
-        }}
+        }
 
         foreach (T? value in values)
-        {{
+        {
             AddParameter(value, valueExpression);
-        }}
-    }}
+        }
+    }
 
-    private void AddParameters({@namespace}.Models.__ICanIterate values)
-    {{
+    private void AddParameters({{@namespace}}.Models.__ICanIterate values)
+    {
         foreach (var (name, value) in values.IterateProperties())
-        {{
+        {
             AddParameter(value, name);
-        }}
-    }}
-}}", token);
+        }
+    }
+}
+""", token);
     }
 
     private static Task GenerateStringBuilderPool(string path, string @namespace, int stringBuilderPoolSize, CancellationToken token)
     {
-        return File.WriteAllTextAsync(Path.Combine(path, "__StringBuilderPool.cs"), Constants.Header + $@"namespace {@namespace}.Clients;
+        return File.WriteAllTextAsync(Path.Combine(path, "__StringBuilderPool.cs"), Constants.Header + $$"""
+namespace {{@namespace}}.Clients;
 
-[System.CodeDom.Compiler.GeneratedCode(""dotnet-openapi-generator"", ""{Constants.ProductVersion}"")]
+[System.CodeDom.Compiler.GeneratedCode("dotnet-openapi-generator", "{{Constants.ProductVersion}}")]
 [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 internal static class __StringBuilderPool
-{{
+{
     private static readonly System.Collections.Concurrent.ConcurrentQueue<System.Text.StringBuilder> s_pool = new();
     static __StringBuilderPool()
-    {{
+    {
         s_pool.Enqueue(new());
         s_pool.Enqueue(new());
         s_pool.Enqueue(new());
         s_pool.Enqueue(new());
         s_pool.Enqueue(new());
-    }}
+    }
 
     public static System.Text.StringBuilder Acquire()
-    {{
+    {
         if (!s_pool.TryDequeue(out var builder))
-        {{
+        {
             builder = new();
-        }}
+        }
 
         return builder;
-    }}
+    }
 
     public static void Release(System.Text.StringBuilder builder)
-    {{
-        if (s_pool.Count <= {stringBuilderPoolSize})
-        {{
+    {
+        if (s_pool.Count <= {{stringBuilderPoolSize}})
+        {
             //Possible small but insignificant race condition
             builder.Clear();
             s_pool.Enqueue(builder);
-        }}
-    }}
-}}", token);
+        }
+    }
+}
+""", token);
     }
 
     private static async Task GenerateClientOptions(string path, string @namespace, string modifier, bool includeOAuth, bool includeJsonSourceGenerators, CancellationToken token)
     {
         Logger.LogInformational("Generating ClientOptions");
-        var staticCtor = $@"
+        var staticCtor = @"
         s_defaultOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());";
 
         if (includeJsonSourceGenerators)
@@ -669,72 +687,74 @@ internal static class __StringBuilderPool
         }
 #endif
 
-        await File.WriteAllTextAsync(Path.Combine(path, "__ClientOptions.cs"), Constants.Header + $@"namespace {@namespace}.Clients;
+        await File.WriteAllTextAsync(Path.Combine(path, "__ClientOptions.cs"), Constants.Header + $$"""
+namespace {{@namespace}}.Clients;
 
-[System.CodeDom.Compiler.GeneratedCode(""dotnet-openapi-generator"", ""{Constants.ProductVersion}"")]
+[System.CodeDom.Compiler.GeneratedCode("dotnet-openapi-generator", "{{Constants.ProductVersion}}")]
 [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-{modifier} class ClientOptions
-{{
+{{modifier}} class ClientOptions
+{
     private static readonly System.Text.Json.JsonSerializerOptions s_defaultOptions;
     static ClientOptions()
-    {{
+    {
         s_defaultOptions = new(System.Text.Json.JsonSerializerDefaults.Web);
 
         s_defaultOptions.PropertyNameCaseInsensitive = true;
         s_defaultOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
         s_defaultOptions.NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString;
-        s_defaultOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;{staticCtor}
-    }}
-    {(includeOAuth ? @"
+        s_defaultOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;{{staticCtor}}
+    }
+    {{(includeOAuth ? @"
     private readonly ITokenRequestClient _tokenRequestClient;
-" : "")}
+" : "")}}
     private readonly System.Text.Json.JsonSerializerOptions? _options;
 
-    public ClientOptions({(includeOAuth ? "ITokenRequestClient tokenRequestClient" : "")}) : this({(includeOAuth ? "tokenRequestClient, " : "")}s_defaultOptions) {{ }}
+    public ClientOptions({{(includeOAuth ? "ITokenRequestClient tokenRequestClient" : "")}}) : this({{(includeOAuth ? "tokenRequestClient, " : "")}}s_defaultOptions) { }
 
-    public ClientOptions({(includeOAuth ? "ITokenRequestClient tokenRequestClient, " : "")}System.Text.Json.JsonSerializerOptions? options)
+    public ClientOptions({{(includeOAuth ? "ITokenRequestClient tokenRequestClient, " : "")}}System.Text.Json.JsonSerializerOptions? options)
     {{{(includeOAuth ? @"
-        _tokenRequestClient = tokenRequestClient;" : "")}
+        _tokenRequestClient = tokenRequestClient;" : "")}}
         _options = options;
-    }}
+    }
 
     internal System.Threading.Tasks.Task<System.Net.Http.HttpRequestMessage> CreateRequest<T>(System.Net.Http.HttpMethod httpMethod, string path, T content, System.Threading.CancellationToken token)
-    {{
+    {
         System.Net.Http.HttpRequestMessage request = new(httpMethod, path);
 
         if (content is not null)
-        {{
+        {
             request.Content = CreateContent(content);
-        }}
+        }
 
         return InterceptRequest(request, token);
-    }}
+    }
 
     internal System.Threading.Tasks.Task<System.Net.Http.HttpRequestMessage> CreateRequest(System.Net.Http.HttpMethod httpMethod, string path, System.Threading.CancellationToken token)
-    {{
+    {
         System.Net.Http.HttpRequestMessage request = new(httpMethod, path);
         return InterceptRequest(request, token);
-    }}
+    }
 
-    protected internal virtual System.Net.Http.HttpContent CreateContent<T>(T content) => new System.Net.Http.StringContent(SerializeContent(content), System.Text.Encoding.UTF8, ""application/json"");
+    protected internal virtual System.Net.Http.HttpContent CreateContent<T>(T content) => new System.Net.Http.StringContent(SerializeContent(content), System.Text.Encoding.UTF8, "application/json");
 
-    protected internal {(includeOAuth ? "async " : "")}virtual System.Threading.Tasks.Task<System.Net.Http.HttpRequestMessage> InterceptRequest(System.Net.Http.HttpRequestMessage request, System.Threading.CancellationToken token)
-    {{
-        {(includeOAuth
+    protected internal {{(includeOAuth ? "async " : "")}}virtual System.Threading.Tasks.Task<System.Net.Http.HttpRequestMessage> InterceptRequest(System.Net.Http.HttpRequestMessage request, System.Threading.CancellationToken token)
+    {
+        {{(includeOAuth
         ? @"request.Headers.Authorization = await _tokenRequestClient.GetTokenAsync(token);
         return request;"
-        : "return System.Threading.Tasks.Task.FromResult(request);")}
-    }}
+        : "return System.Threading.Tasks.Task.FromResult(request);")}}
+    }
 
     protected internal virtual string SerializeContent<T>(T content) => System.Text.Json.JsonSerializer.Serialize(content, options: _options);
 
-    protected internal virtual {asyncDeSerializeContent}System.Threading.Tasks.Task<T?> DeSerializeContent<T>(System.Net.Http.HttpResponseMessage response, System.Threading.CancellationToken token){deserialize}
+    protected internal virtual {{asyncDeSerializeContent}}System.Threading.Tasks.Task<T?> DeSerializeContent<T>(System.Net.Http.HttpResponseMessage response, System.Threading.CancellationToken token){{deserialize}}
 
     protected internal virtual System.Threading.Tasks.Task InterceptResponse(System.Net.Http.HttpResponseMessage result, System.Threading.CancellationToken token)
-    {{
+    {
         result.EnsureSuccessStatusCode();
         return System.Threading.Tasks.Task.CompletedTask;
-    }}
-}}", token);
+    }
+}
+""", token);
     }
 }
